@@ -10,10 +10,21 @@ app.use(express.json());
 // ==========================
 // 🔥 CONNECT MONGODB
 // ==========================
-mongoose.connect(process.env.MONGO_URI)
-.then(() => console.log("MongoDB Connected ✅"))
-.catch(err => console.log("MongoDB Error ❌", err));
-mongoose.connect(process.env.MONGO_URI)
+const startServer = async () => {
+    try {
+        await mongoose.connect(process.env.MONGO_URI);
+        console.log("✅ MongoDB Connected");
+
+        app.listen(process.env.PORT || 5000, () => {
+            console.log("🚀 Sergive mver running");
+        });
+
+    } catch (err) {
+        console.log("❌ MongoDB Error:", err);
+    }
+};
+
+startServer();
 // ==========================
 // 🔥 MODELS
 // ==========================
@@ -582,9 +593,7 @@ app.get("/", (req, res) => {
 // ==========================
 // 🔥 START SERVER
 // ==========================
-app.listen(5000, () => {
-    console.log("Server running on port 5000");
-});
+
 app.get("/my-stats/:email", async (req, res) => {
     try {
         const email = req.params.email;
