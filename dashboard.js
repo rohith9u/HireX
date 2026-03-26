@@ -54,7 +54,7 @@ let role = (sessionUser?.role || "").toLowerCase();
 
 console.log("ROLE DEBUG:", role, sessionUser);
 
-if (!sessionUser || role !== "user") {
+if (!sessionUser) {
     showToast("Access Denied!", "error");
     setTimeout(() => window.location.href = "login.html", 1500);
 }

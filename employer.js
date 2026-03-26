@@ -279,14 +279,9 @@ let role = (sessionUser?.role || "").toLowerCase();
 
 console.log("ROLE DEBUG:", role, sessionUser);
 
-if (!sessionUser || role !== "employer") {
+if (!sessionUser) {
     showToast("Access Denied!", "error");
-
-    setTimeout(() => {
-        window.location.href = "login.html";
-    }, 1500);
-
-    throw new Error("Unauthorized"); // 🔥 STOP EXECUTION
+    setTimeout(() => window.location.href = "login.html", 1500);
 }
 
 let email = (localStorage.getItem("userEmail") || sessionUser?.email || "").trim().toLowerCase();
