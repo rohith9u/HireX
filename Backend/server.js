@@ -10,10 +10,10 @@ app.use(express.json());
 // ==========================
 // 🔥 CONNECT MONGODB
 // ==========================
-mongoose.connect("mongodb://127.0.0.1:27017/jobportal")
+mongoose.connect("mongodb+srv://rohith12u:<Rohith@1201>@cluster0.xymhaku.mongodb.net/?appName=Cluster0")
 .then(() => console.log("MongoDB Connected ✅"))
 .catch(err => console.log(err));
-
+mongoose.connect(process.env.MONGO_URI)
 // ==========================
 // 🔥 MODELS
 // ==========================
