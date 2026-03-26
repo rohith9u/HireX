@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Login - Job Portal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+    <img src="images/logo.png" class="logo-img">
+    <div class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="#">Login</a>
+        <a href="register.html">Register</a>
+    </div>
+</div>
+
+
+<div class="page-wrapper">
+
+    <div class="main-card">
+
+        <div class="left-panel"></div>
+
+        <div class="right-panel">
+            <div class="login-card">
+                <h2 class = "logintitle">Login</h2>
+
+               <input type="email" id="email" placeholder="Email">
+<input type="password" id="password" placeholder="Password">
+<button onclick="googleLogin()" class="google-btn">
+    <img src="images/google.png" width="18" style="vertical-align:middle;">
+    Continue with Google
+</button>
+<button id="loginBtn" onclick="login()">Login</button>
+
+               <p>Don't have an account? <a href="register.html">Register</a></p>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+
+<div id="toast"></div>
+
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script>
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDt2g0S6ihDR-rpTTObkuP-el16CUSQNz8",
+  authDomain: "hirex-3a4f1.firebaseapp.com",
+  projectId: "hirex-3a4f1",
+  storageBucket: "hirex-3a4f1.firebasestorage.app",
+  messagingSenderId: "598060337773",
+  appId: "1:598060337773:web:e0f72f0abedeae6ecf0d64",
+  measurementId: "G-S20DGWRVT7"
+};
+
+
+
+firebase.initializeApp(firebaseConfig);
+function googleLogin() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+
+    firebase.auth().signInWithPopup(provider)
+    .then(result => {
+
+        const user = result.user;
+
+        // 🔥 Split name
+        let fullName = user.displayName || "";
+        let parts = fullName.split(" ");
+
+        let firstName = parts[0] || "";
+        let lastName = parts.slice(1).join(" ") || "";
+
+        // 🔥 Prepare data
+        const userData = {
+            firstName,
+            lastName,
+            email: user.email,
+            profilePic: user.photoURL
+        };
+
+        // 🔥 Send to backend
+        fetch("http://localhost:5000/google-login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(userData)
+        })
+        .then(res => res.json())
+        .then(data => {
+
+            console.log("BACKEND DATA:", data); // DEBUG
+
+            // ✅ Save user locally
+            localStorage.setItem("loggedInUser", JSON.stringify(data.user));
+            localStorage.setItem("userEmail", data.user.email);
+
+            showToast("Google Login Successful 🚀");
+
+            // 🔥 IMPORTANT LOGIC
+            setTimeout(() => {
+
+                // ✅ NEW USER OR NO ROLE → COMPLETE PROFILE
+                if (data.isNewUser || !data.user.role) {
+                    window.location.href = "complete-profile.html";
+                    return;
+                }
+
+                // ✅ EXISTING USER
+                let role = data.user.role.toLowerCase();
+
+                if (role === "user") {
+                    window.location.href = "dashboard.html";
+                } else if (role === "employer") {
+                    window.location.href = "employer.html";
+                } else {
+                    // fallback
+                    window.location.href = "dashboard.html";
+                }
+
+            }, 1000);
+
+        })
+        .catch(err => {
+            console.log("BACKEND ERROR:", err);
+            showToast("Server error ❌", "error");
+        });
+
+    })
+    .catch(error => {
+        console.log("FIREBASE ERROR:", error);
+        showToast("Google login failed ❌", "error");
+    });
+}
+function showToast(message, type = "success") {
+    let toast = document.getElementById("toast");
+
+    toast.innerText = message;
+    toast.className = "show";
+
+    if (type === "error") {
+        toast.classList.add("error");
+    }
+
+    setTimeout(() => {
+        toast.className = "";
+    }, 3000);
+}
+
+function loginUser() {
+    // fake login
+    localStorage.setItem("user", "loggedIn");
+
+    // check if job was selected
+    const jobId = localStorage.getItem("selectedJob");
+
+    if (jobId) {
+        window.location.href = "job.html?id=" + jobId;
+    } else {
+        window.location.href = "index.html";
+    }
+}
+// Login Function
+function login() {
+    let email = document.getElementById("email").value.trim();
+    let password = document.getElementById("password").value.trim();
+    let btn = document.getElementById("loginBtn");
+
+    if (!email || !password) {
+        showToast("Please fill all fields", "error");
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerText = "Logging in...";
+
+    fetch("http://localhost:5000/login", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ email, password })
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        console.log("FULL RESPONSE:", data); // 🔥 DEBUG
+
+        if (data.message === "Login successful") {
+
+            // ❗ check if user exists
+            if (!data.user) {
+                console.error("User not received from backend ❌");
+                showToast("Login error: user missing", "error");
+                return;
+            }
+
+            // ✅ normalize role (avoid case issues)
+            let role = data.user.role ? data.user.role.toLowerCase() : "";
+
+            // ✅ save user session details
+            localStorage.setItem("loggedInUser", JSON.stringify(data.user));
+            localStorage.setItem("role", role);
+            localStorage.setItem("userEmail", data.user.email || "");
+
+            showToast("Welcome back 👋");
+
+            setTimeout(() => {
+
+                if (role === "user") {
+                    window.location.href = "dashboard.html";
+                } else if (role === "employer") {
+                    window.location.href = "employer.html";
+                } else {
+                    console.error("Invalid role:", role);
+                    showToast("Unknown user role ❌", "error");
+                }
+
+            }, 1200);
+
+        } else {
+            showToast(data.message || "Invalid credentials", "error");
+        }
+
+    })
+    .catch(err => {
+        console.log("ERROR:", err);
+        showToast("Server error. Please try again.", "error");
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerText = "Login";
+    });
+}
+document.getElementById("password").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") {
+        login();
+    }
+});
+</script>
+</body>
+</html>

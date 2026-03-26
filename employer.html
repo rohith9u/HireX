@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Employer Panel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://cdn.jsdelivr.net/npm/remixicon/fonts/remixicon.css" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+   
+<div id="toast"></div>
+<div class="topbar">
+    <img src="images/logo.png" class="logo-img">
+    <div class="top-actions">
+      <div class="notif-wrapper">
+    <i class="ri-notification-3-line icon" onclick="toggleNotif()"></i>
+    <span id="notifCount" class="notif-badge" style="display:none;">0</span>
+</div>
+
+        <div class="profile-top" onclick="showSection('profile')">
+            <i class="ri-user-3-line"></i>
+            <span>Recruiter</span>
+        </div>
+
+        <i class="ri-logout-box-r-line icon" onclick="logout()"></i>
+    </div>
+</div>
+<div id="notifBox" class="notif-box">
+    <div id="notifContent"></div>
+</div>
+
+<span id="notifCount"></span>
+
+
+<div class="layout">
+
+    <!-- 🔹 SIDEBAR -->
+    <div class="sidebar">
+        <div class="brand">
+            <i class="ri-briefcase-line"></i>
+            <span>JobPortal</span>
+        </div>
+
+        <a onclick="showSection('dashboard')">
+            <i class="ri-dashboard-line"></i>
+            <span>Dashboard</span>
+        </a>
+
+        <a onclick="showSection('post')">
+            <i class="ri-add-circle-line"></i>
+            <span>Post Job</span>
+        </a>
+
+        <a onclick="showSection('jobs')">
+            <i class="ri-briefcase-2-line"></i>
+            <span>My Jobs</span>
+        </a>
+
+        <a onclick="showSection('applicants')">
+            <i class="ri-file-list-3-line"></i>
+            <span>Applicants</span>
+        </a>
+
+        <a onclick="showSection('profile')">
+            <i class="ri-user-3-line"></i>
+            <span>Profile</span>
+        </a>
+    </div>
+
+    <!-- 🔹 MAIN CONTENT -->
+    <div class="main" id="content">
+
+        <!-- Default Dashboard -->
+        <div class="stats">
+            <div class="stat-card">
+                Jobs Posted<br><span id="jobCount">0</span>
+            </div>
+            <div class="stat-card">
+                Applicants<br><span id="appCount">0</span>
+            </div>
+        </div>
+
+        <h2 id="welcomeText">Welcome Employer 👋</h2>
+
+    </div>
+
+</div>
+
+<script src="employer.js"></script>
+
+
+
+</body>
+</html>

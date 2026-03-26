@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Apply Job</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://cdn.jsdelivr.net/npm/remixicon/fonts/remixicon.css" rel="stylesheet">
+<!-- LINK CSS -->
+<link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+</head>
+
+<body>
+
+<body>
+
+<!-- TOPBAR (same as dashboard) -->
+<div class="topbar">
+    <img src="images/logo.png" class="logo-img">
+
+    <div class="top-actions">
+        <i class="ri-notification-3-line icon"></i>
+
+        <div class="profile-top">
+            <i class="ri-user-3-line"></i>
+            <span>User</span>
+        </div>
+
+        <i class="ri-logout-box-r-line icon" onclick="logout()"></i>
+    </div>
+</div>
+
+<div class="layout">
+
+    <!-- SIDEBAR (same as dashboard) -->
+    <div class="sidebar">
+        <div class="brand">
+            <i class="ri-briefcase-line"></i>
+            <span>JobPortal</span>
+        </div>
+
+        <a href="dashboard.html">
+            <i class="ri-dashboard-line"></i>
+            <span>Dashboard</span>
+        </a>
+
+        <a href="dashboard.html#jobs">
+            <i class="ri-briefcase-2-line"></i>
+            <span>Jobs</span>
+        </a>
+
+        <a href="dashboard.html#applications">
+            <i class="ri-file-list-3-line"></i>
+            <span>Applications</span>
+        </a>
+
+        <a href="dashboard.html#profile">
+            <i class="ri-user-3-line"></i>
+            <span>Profile</span>
+        </a>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main">
+
+        <div class="job-card-premium apply-card">
+
+            <h2>Apply for Job</h2>
+
+            <div class="form-container">
+                <div class="left-fields">
+                    <input id="name" type="text" placeholder="Full Name" required>
+
+<input id="email" type="email" placeholder="Email (@gmail.com only)" required pattern="^[a-zA-Z0-9._%+-]+@gmail\.com$">
+
+<input id="phone" type="tel" placeholder="Phone Number" required pattern="[0-9]{10}" maxlength="10">
+
+<input id="city" type="text" placeholder="City" required>
+
+<input id="degree" type="text" placeholder="Highest Qualification" required>
+
+<input id="experience" type="number" placeholder="Experience (years)" min="0" max="50" required>
+
+<input id="skills" type="text" placeholder="Skills (e.g. Java, React)" required>
+
+<input type="file" id="resumeInput" accept="application/pdf" required>
+
+<div id="analysisBox" style="margin-top:15px;"></div>
+
+                </div>
+            </div>
+
+            <button class="apply-btn" onclick="submitApplication()">
+                Submit Application
+            </button>
+
+            <p id="msg"></p>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+
+<script>
+    document.getElementById("resumeInput").addEventListener("change", analyzeResume);
+
+// ✅ ADD THESE
+document.getElementById("skills").addEventListener("input", analyzeResume);
+document.getElementById("experience").addEventListener("input", analyzeResume);
+function submitApplication() {
+    let name = document.getElementById("name").value.trim();
+    let email = localStorage.getItem("userEmail");
+    let phone = document.getElementById("phone").value.trim();
+    let city = document.getElementById("city").value.trim();
+    let degree = document.getElementById("degree").value.trim();
+    let experience = document.getElementById("experience").value.trim();
+    let skills = document.getElementById("skills").value.trim();
+    let resumeFile = document.getElementById("resumeInput").files[0];
+
+    let jobId = localStorage.getItem("selectedJobId");
+    let msg = document.getElementById("msg");
+    if (!analyzedData) {
+    msg.style.color = "red";
+    msg.innerText = "Please upload resume first!";
+    return;
+    }
+    // 🔥 PHONE VALIDATION
+if (!/^[0-9]{10}$/.test(phone)) {
+    msg.style.color = "red";
+    msg.innerText = "Enter valid 10-digit phone number ❌";
+    return;
+}
+
+// 🔥 GMAIL VALIDATION
+if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(email)) {
+    msg.style.color = "red";
+    msg.innerText = "Only Gmail allowed ❌";
+    return;
+}
+    if (!name || !email || !phone || !city || !degree || !experience || !skills || !resumeFile) {
+        msg.style.color = "red";
+        msg.innerText = "Please fill all fields!";
+        return;
+    }
+
+    let formData = new FormData();
+
+    formData.append("name", name);
+    formData.append("email", email);
+    formData.append("phone", phone);
+    formData.append("city", city);
+    formData.append("degree", degree);
+    formData.append("skills", analyzedData.skills);
+    formData.append("experience", analyzedData.experience);
+    formData.append("match", analyzedData.match);
+    formData.append("jobId", jobId);
+    formData.append("resume", resumeFile);
+
+    fetch("http://localhost:5000/apply-job", {
+        method: "POST",
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        msg.style.color = "green";
+        msg.innerText = data.message || "Applied!";
+        
+        setTimeout(() => {
+            window.location.href = "dashboard.html";
+        }, 1000);
+    })
+    .catch(() => {
+        msg.style.color = "red";
+        msg.innerText = "Server error!";
+    });
+}
+let analyzedData = null;
+
+async function analyzeResume() {
+
+    let file = document.getElementById("resumeInput").files[0];
+
+if (!file && !analyzedData) return;
+    let reader = new FileReader();
+
+    reader.onload = async function() {
+
+        let typedArray = new Uint8Array(this.result);
+        let pdf = await pdfjsLib.getDocument(typedArray).promise;
+
+        let text = "";
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+            let page = await pdf.getPage(i);
+            let content = await page.getTextContent();
+
+            let strings = content.items.map(item => item.str);
+            text += strings.join(" ") + " ";
+        }
+
+        // 🔥 EXTRACT
+        let resumeSkills = extractSkills(text);
+
+// 🔥 get manual input
+let formSkills = document.getElementById("skills").value
+    .toLowerCase()
+    .split(",")
+    .map(s => s.trim());
+
+// 🔥 merge both (remove duplicates)
+let userSkills = [...new Set([...resumeSkills, ...formSkills])];
+        let resumeExp = extractExperience(text);
+
+// 🔥 get form experience
+let formExp = parseInt(document.getElementById("experience").value) || 0;
+
+// 🔥 take MAX (important logic)
+let userExp = Math.max(resumeExp, formExp);
+
+        // 🔥 GET JOB
+        let jobId = localStorage.getItem("selectedJobId");
+
+        let jobs = await fetch("http://localhost:5000/jobs").then(r => r.json());
+        let job = jobs.find(j => j._id == jobId);
+
+        let jobSkills = job.skills.toLowerCase().split(",");
+        let jobExp = parseInt(job.experience) || 0;
+        let normalizedUserSkills = userSkills.map(s => s.toLowerCase());
+
+        let matched = jobSkills.filter(skill => {
+    let cleanSkill = skill.trim().toLowerCase();
+    return userSkills.map(s => s.toLowerCase()).includes(cleanSkill);
+});
+
+        let missing = jobSkills.filter(skill => {
+    let cleanSkill = skill.trim().toLowerCase();
+    return !userSkills.map(s => s.toLowerCase()).includes(cleanSkill);
+});
+
+       let skillScore = (matched.length / jobSkills.length) * 100;
+
+let expScore = userExp >= jobExp
+    ? 100
+    : (userExp / jobExp) * 100;
+
+// ✅ STRICT LOGIC
+let finalScore = 0;
+
+if (matched.length > 0) {
+    if (skillScore >= 30) {
+        finalScore = (0.7 * skillScore) + (0.3 * expScore);
+    }
+}
+
+        analyzedData = {
+            skills: userSkills,
+            experience: userExp,
+            match: finalScore
+        };
+
+        // 🔥 SHOW RESULT (THIS IS WHAT YOU WANT)
+        document.getElementById("analysisBox").innerHTML = `
+            <h3>Match Score: ${finalScore.toFixed(1)}%</h3>
+
+            <p><b>Matched Skills:</b> ${matched.join(", ")}</p>
+            <p><b>Skill Gap Suggestions:</b> ${missing.join(", ")}</p>
+            <p><b>Experience:</b> ${userExp} / ${jobExp} years</p>
+        `;
+    };
+
+    reader.readAsArrayBuffer(file);
+}
+const skillMap = {
+    html: ["html", "html5", "basic html"],
+    css: ["css", "css3"],
+    javascript: ["javascript", "js"],
+    react: ["react", "reactjs"],
+    ds: ["ds", "data structures","dsa"],
+    python: ["python"]
+};
+
+function extractSkills(text) {
+    text = text.toLowerCase();
+    let skills = [];
+
+    for (let skill in skillMap) {
+        for (let keyword of skillMap[skill]) {
+
+            // 🔥 WORD MATCH (not random substring)
+            let regex = new RegExp("\\b" + keyword + "\\b", "i");
+
+            if (regex.test(text)) {
+                skills.push(skill);
+                break;
+            }
+        }
+    }
+
+    return skills;
+}
+function extractExperience(text) {
+    let match = text.match(/(\d+)\s*(year|years)/);
+    return match ? parseInt(match[1]) : 0;
+}
+function logout() {
+    localStorage.clear();
+    window.location.href = "login.html";
+}
+</script>
+
+</body>
+</html>

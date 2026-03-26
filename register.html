@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register - Job Portal</title>
+    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body>
+<div id="toast"></div>
+<div class="topbar">
+    <img src="images/logo.png" class="logo-img">
+    <div class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="login.html">Login</a>
+        <a href="#">Register</a>
+    </div>
+</div>
+</div>
+<div class="main center-page">
+
+    <div class="job-card-premium register-card">
+            <h2>Register</h2>
+
+      <div class="form-grid">
+   
+        <input type="text" id="firstName" placeholder="First Name" required>
+        <input type="text" id="lastName" placeholder="Last Name" required>
+        <input type="email" id="email" placeholder="Email" required>
+        <input type="password" id="password" minlength="6" placeholder="Password" required>
+        <input type="password" id="confirmPassword" required placeholder="Confirm Password">
+        <p id="error" style="color:red;"></p>
+        <div class="two-col">
+        <input type="tel" id="contact" placeholder="Contact Number" required>
+        <input type="text" id="city" placeholder="Current City" required>
+        </div>
+    </div>
+
+    <!-- Gender -->
+    <label>Gender</label>
+    <div class="option-group">
+        <div class="option" onclick="selectOption(this,'gender')" data-value="Male">Male</div>
+        <div class="option" onclick="selectOption(this,'gender')" data-value="Female">Female</div>
+        <div class="option" onclick="selectOption(this,'gender')" data-value="Other">Other</div>
+    </div>
+
+    <!-- Type -->
+    <label>Type</label>
+    <div class="option-group">
+        <div class="option" onclick="selectOption(this,'type')" data-value="College Student">Student</div>
+        <div class="option" onclick="selectOption(this,'type')" data-value="Fresher">Fresher</div>
+        <div class="option" onclick="selectOption(this,'type')" data-value="Professional">Professional</div>
+        <div class="option" onclick="selectOption(this,'type')" data-value="School Student">School Student</div>
+    </div>
+
+            <!-- 🔥 ROLE SELECTION -->
+            <div class="role-container">
+                <div class="role-card active" onclick="selectRole('user')" id="userCard">
+                    
+                    <h3>Job Applicant</h3>
+                </div>
+
+                <div class="role-card" onclick="selectRole('employer')" id="employerCard">
+                    
+                    <h3>Recruiter</h3>
+                </div>
+            </div>
+
+            <button onclick="register()">Register</button>
+
+            <p>Already have an account? <a href="login.html">Login</a></p>
+        </div>
+    </div>
+
+    <!-- ✅ SCRIPT -->
+    <script>
+        let selectedData = {
+    gender: "",
+    type: ""
+};
+
+function selectOption(element, category) {
+    let options = element.parentElement.children;
+
+    for (let opt of options) {
+        opt.classList.remove("active");
+    }
+
+    element.classList.add("active");
+    selectedData[category] = element.getAttribute("data-value");
+}
+    let selectedRole = "user"; // default
+
+    function selectRole(role) {
+        selectedRole = role;
+
+        document.getElementById("userCard").classList.remove("active");
+        document.getElementById("employerCard").classList.remove("active");
+
+        document.getElementById(role + "Card").classList.add("active");
+    }
+
+    function register() {
+    let error = document.getElementById("error");
+
+    let firstName = document.getElementById("firstName").value.trim();
+    let lastName = document.getElementById("lastName").value.trim();
+    let email = document.getElementById("email").value.trim();
+    let password = document.getElementById("password").value.trim();
+    let confirmPassword = document.getElementById("confirmPassword").value.trim();
+    let contact = document.getElementById("contact").value.trim();
+    let city = document.getElementById("city").value.trim();
+
+    // 🔥 REQUIRED FIELD CHECK
+    if (!firstName || !lastName || !email || !password || !confirmPassword || !contact || !city) {
+        error.innerText = "All fields are required ❌";
+        return;
+    }
+
+    // 🔥 EMAIL FORMAT CHECK
+    let emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(email)) {
+        error.innerText = "Enter valid email format ❌";
+        return;
+    }
+
+    // 🔥 PASSWORD MATCH
+    if (password !== confirmPassword) {
+        error.innerText = "Passwords do not match ❌";
+        return;
+    }
+    if (!selectedData.gender) {
+    error.innerText = "Please select gender ❌";
+    return;
+}
+if (password.length < 6) {
+    error.innerText = "Password must be at least 6 characters ❌";
+    return;
+}
+if (!selectedData.type) {
+    error.innerText = "Please select type ❌";
+    return;
+}
+if (!selectedRole) {
+    error.innerText = "Please select role ❌";
+    return;
+}
+    error.innerText = "";
+
+    let user = {
+        firstName,
+        lastName,
+        email,
+        password,
+        contact,
+        city,
+        gender: selectedData.gender,
+        type: selectedData.type,
+        role: selectedRole
+    };
+
+    fetch("http://localhost:5000/register", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(user)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.message && data.message.toLowerCase().includes("success")) {
+            showToast("Registered successfully ✅");
+
+        setTimeout(() => {
+            window.location.href = "login.html";
+        }, 1500);
+            return;
+        }
+         showToast(data.message || "Registration failed ❌", "error");
+    })
+    .catch(err => {
+        console.log(err);
+        error.innerText = "Error connecting to server ❌";
+    });
+}
+function showToast(message, type = "success") {
+    const toast = document.getElementById("toast");
+
+    if (!toast) {
+        console.error("Toast element not found");
+        return;
+    }
+
+    toast.innerText = message;
+
+    // reset classes
+    toast.classList.remove("error");
+    toast.classList.add("show");
+
+    if (type === "error") {
+        toast.classList.add("error");
+    }
+
+    setTimeout(() => {
+        toast.classList.remove("show", "error");
+    }, 3000);
+}
+    </script>
+    <script>
+document.getElementById("profilePic").addEventListener("change", function() {
+    let fileName = this.files[0] ? this.files[0].name : "No file selected";
+    document.getElementById("fileName").innerText = fileName;
+});
+
+</script>
+</body>
+</html>

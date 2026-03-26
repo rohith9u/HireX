@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>User Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href="https://cdn.jsdelivr.net/npm/remixicon/fonts/remixicon.css" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<div class="topbar">
+    <img src="images/logo.png" class="logo-img">
+
+    <div class="top-actions">
+        <div class="notif-wrapper">
+            <i class="ri-notification-3-line icon" onclick="toggleNotif()"></i>
+            <span id="notifDot" class="notif-dot"></span>
+        </div>
+
+        <div class="profile-top" onclick="showSection('profile')">
+            <i class="ri-user-3-line"></i>
+            <span>Applicant</span>
+        </div>
+
+        <i class="ri-logout-box-r-line icon" onclick="logout()"></i>
+    </div>
+</div>
+
+<!-- ✅ MOVE HERE (outside topbar) -->
+<div id="notifBox" class="notif-box">
+    <h4 style="color:white; margin-bottom:10px;">Notifications</h4>
+    <div id="notifList"></div>
+</div>
+
+<div class="layout">
+
+    <div class="sidebar">
+        <div class="brand">
+            <i class="ri-briefcase-line"></i>
+            <span>JobPortal</span>
+        </div>
+
+        <a onclick="showSection('dashboard')">
+            <i class="ri-dashboard-line"></i>
+            <span>Dashboard</span>
+        </a>
+
+        <a onclick="showSection('jobs')">
+            <i class="ri-briefcase-2-line"></i>
+            <span>Jobs</span>
+        </a>
+
+        <a onclick="showSection('applications')">
+            <i class="ri-file-list-3-line"></i>
+            <span>Applications</span>
+        </a>
+
+        <a onclick="showSection('profile')">
+            <i class="ri-user-3-line"></i>
+            <span>Profile</span>
+        </a>
+    </div>
+
+    <div class="main" id="content"></div>
+
+</div>
+
+<div id="toast"></div>
+
+<!-- 🔥 KEEP YOUR JS SAME -->
+<script src="dashboard.js"></script>
+
+</body>
+</html>

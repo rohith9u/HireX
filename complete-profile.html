@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Complete Profile</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+    background: radial-gradient(circle at top left, #1e293b, #020617);
+    font-family: 'Segoe UI', sans-serif;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+/* CARD */
+.container {
+    width: 500px;
+    padding: 30px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 0 60px rgba(0,0,0,0.5);
+}
+
+/* INPUTS */
+input {
+    width: 48%;
+    padding: 12px;
+    margin: 10px 1%;
+    border-radius: 12px;
+    border: none;
+    background: #020617;
+    color: white;
+    outline: none;
+    transition: 0.3s;
+}
+
+input:focus {
+    box-shadow: 0 0 10px #3b82f6;
+}
+
+/* LABEL */
+label {
+    display: block;
+    margin: 15px 0 8px;
+    color: #cbd5f5;
+}
+
+/* OPTIONS GROUP */
+.option-group {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* PILLS */
+.option-btn {
+    padding: 10px 20px;
+    border-radius: 25px;
+    border: none;
+    background: #020617;
+    color: #cbd5f5;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+/* HOVER */
+.option-btn:hover {
+    background: #1e293b;
+}
+
+/* ACTIVE (GLOW EFFECT 🔥) */
+.option-btn.active {
+    background: linear-gradient(135deg, #3b82f6, #22c55e);
+    color: white;
+    box-shadow: 
+        0 0 10px rgba(59,130,246,0.7),
+        0 0 20px rgba(34,197,94,0.6);
+}
+
+/* ROLE BIG BUTTONS */
+#roleGroup .option-btn {
+    width: 100%;
+    text-align: center;
+    padding: 18px;
+    border-radius: 15px;
+    font-size: 18px;
+}
+
+/* ACTIVE ROLE */
+#roleGroup .option-btn.active {
+    border: 2px solid #3b82f6;
+    background: #020617;
+    box-shadow: 
+        0 0 15px rgba(59,130,246,0.8),
+        inset 0 0 10px rgba(59,130,246,0.4);
+}
+
+/* BUTTON */
+.submit-btn {
+    width: 120px;
+    margin-top: 20px;
+    padding: 10px;
+    border-radius: 20px;
+    border: none;
+    background: linear-gradient(135deg, #3b82f6, #22c55e);
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.submit-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(59,130,246,0.7);
+}
+
+/* LOGIN TEXT */
+p {
+    margin-top: 10px;
+    color: #cbd5f5;
+}
+
+a {
+    color: #a855f7;
+    text-decoration: none;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h2>Complete Your Profile</h2>
+
+    <!-- INPUTS -->
+    <input type="text" id="contact" placeholder="Contact Number">
+    <input type="text" id="city" placeholder="Current City">
+
+    <!-- GENDER -->
+    <div class="form-group">
+        <label>Gender</label>
+        <div class="option-group" id="genderGroup">
+            <button class="option-btn" onclick="selectOption(this, 'male', 'gender')">Male</button>
+            <button class="option-btn" onclick="selectOption(this, 'female', 'gender')">Female</button>
+            <button class="option-btn" onclick="selectOption(this, 'other', 'gender')">Other</button>
+        </div>
+    </div>
+
+    <!-- TYPE -->
+    <div class="form-group">
+        <label>Type</label>
+        <div class="option-group" id="typeGroup">
+            <button class="option-btn" onclick="selectOption(this, 'student', 'type')">Student</button>
+            <button class="option-btn" onclick="selectOption(this, 'fresher', 'type')">Fresher</button>
+            <button class="option-btn" onclick="selectOption(this, 'professional', 'type')">Professional</button>
+            <button class="option-btn" onclick="selectOption(this, 'school', 'type')">School Student</button>
+        </div>
+    </div>
+
+    <!-- ROLE -->
+    <div class="form-group">
+        <label>Role</label>
+        <div class="option-group" id="roleGroup">
+            <button class="option-btn" onclick="selectOption(this, 'user', 'role')">
+                Job Applicant
+            </button>
+            <button class="option-btn" onclick="selectOption(this, 'employer', 'role')">
+                Recruiter
+            </button>
+        </div>
+    </div>
+
+    <!-- SUBMIT -->
+    <button class="submit-btn" onclick="saveProfile()">Save Profile</button>
+
+</div>
+
+<script>
+let selectedGender = "";
+let selectedType = "";
+let selectedRole = "";
+
+// SELECT FUNCTION
+function selectOption(button, value, type) {
+
+    let groupId = type + "Group";
+
+    document.querySelectorAll(`#${groupId} .option-btn`)
+        .forEach(btn => btn.classList.remove("active"));
+
+    button.classList.add("active");
+
+    if (type === "gender") selectedGender = value;
+    if (type === "type") selectedType = value;
+    if (type === "role") selectedRole = value;
+}
+
+// SAVE PROFILE
+function saveProfile() {
+
+    let contact = document.getElementById("contact").value;
+    let city = document.getElementById("city").value;
+
+    let user = JSON.parse(localStorage.getItem("loggedInUser"));
+
+    if (!contact || !city || !selectedGender || !selectedType || !selectedRole) {
+        alert("Please fill all fields");
+        return;
+    }
+
+    fetch("http://localhost:5000/update-profile", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            email: user.email,
+            contact,
+            city,
+            gender: selectedGender,
+            type: selectedType,
+            role: selectedRole
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert("Profile saved ✅");
+        window.location.href = "dashboard.html";
+    })
+    .catch(err => {
+        console.log(err);
+        alert("Error saving profile");
+    });
+}
+</script>
+
+</body>
+</html>

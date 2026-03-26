@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Schedule Interview</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="style.css">
+<!-- ✅ CONNECT YOUR CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+</head>
+
+<body>
+    <div class="topbar">
+    <img src="images/logo.png" class="logo-img">
+    </div>
+<div class="center-page">
+
+    <div class="register-card" style="max-width:500px;">
+
+        <h2>📅 Schedule Interview</h2>
+
+        <label>Select Date & Time</label>
+
+        <input type="text" id="interviewTime" placeholder="Select date & time">
+
+        <button onclick="scheduleInterview()" class="apply-btn">
+            Schedule Interview
+        </button>
+
+        <button onclick="goBack()" class="back-btn-premium">
+            ← Back
+        </button>
+
+    </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+flatpickr("#interviewTime", {
+    enableTime: true,
+    dateFormat: "Y-m-d H:i",
+    minDate: "today",
+    maxDate: new Date().fp_incr(30),
+
+    minTime: "10:00",
+    maxTime: "18:00",
+
+    time_24hr: false
+});
+let appId = localStorage.getItem("selectedAppId");
+
+function scheduleInterview() {
+
+    let time = document.getElementById("interviewTime").value;
+
+    if (!time) {
+        showToast("Please select date & time ❌", "error");
+        return;
+    }
+
+    fetch("http://localhost:5000/schedule-interview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            appId,
+            interviewDate: time
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        showToast("Interview Scheduled ✅");
+
+        setTimeout(() => {
+            window.location.href = "employer.html";
+        }, 1500);
+    })
+    .catch(() => {
+        showToast("Error scheduling ❌", "error");
+    });
+}
+
+function goBack() {
+    window.location.href = "employer.html";
+}
+
+// 🔔 TOAST (reuse your system)
+function showToast(message, type="success") {
+    let toast = document.getElementById("toast");
+
+    toast.innerText = message;
+    toast.className = "show";
+
+    if(type==="error") toast.classList.add("error");
+
+    setTimeout(()=>toast.className="",3000);
+}
+
+</script>
+
+</body>
+</html>

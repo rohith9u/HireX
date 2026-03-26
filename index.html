@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Job Portal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<div class="topbar">
+    <img src="images/logo.png" class="logo-img">
+    <div class="nav-links">
+        <a href="#">Home</a>
+        <a href="login.html">Login</a>
+        <a href="register.html">Register</a>
+    </div>
+</div>
+
+<!-- HERO -->
+<div class="hero-split">
+
+    <!-- LEFT -->
+    <div class="hero-left">
+       <h1 class="hero-text">
+    <span id="typedText"></span><span class="cursor">|</span>
+</h1>
+
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Search jobs..." 
+       onkeypress="if(event.key === 'Enter') searchJobs()">
+            <button onclick="searchJobs()">Search</button>
+        </div>  
+            
+        
+    </div>
+
+    <!-- RIGHT -->
+    <div class="hero-right">
+    <div class="image-slider">
+        <img id="sliderImage" src="images/hero.jpg">
+    </div>
+</div>
+
+</div>
+<div class="jobs" id="jobResults" style="display:none;">
+    <h2>Available Jobs</h2>
+    <div class="job-container" id="jobList"></div>
+</div>
+<div class="features">
+
+    <div class="feature-card">
+        <div class="icon"></div>
+        <h3>Smart Matching</h3>
+        <p>Match jobs based on your skills</p>
+    </div>
+
+    <div class="feature-card">
+        <div class="icon"></div>
+        <h3>Track Applications</h3>
+        <p>Applied → Interview → Selected</p>
+    </div>
+
+    <div class="feature-card">
+        <div class="icon"></div>
+        <h3>Notifications</h3>
+        <p>Real-time alerts for interviews</p>
+    </div>
+
+</div>
+<!-- JOB RESULTS -->
+
+<div class="cta">
+    <h2>Ready to start your career?</h2>
+    <button onclick="window.location.href='register.html'">
+        Get Started
+    </button>
+</div>
+<!-- COMPANY STRIP -->
+<div class="company-strip">
+    <h2>Top Companies Hiring</h2>
+
+    <div class="company-logos">
+        <div class="logo-track">
+            <img src="images/apple.png">
+            <img src="images/ibm.png">
+            <img src="images/windows.png">
+            <img src="images/oneplus.png">
+            <img src="images/chatgpt.png">
+            <img src="images/android.png">
+            <img src="images/coco.png">
+
+            <!-- duplicate for loop -->
+            <img src="images/apple.png">
+            <img src="images/ibm.png">
+            <img src="images/windows.png">
+            <img src="images/oneplus.png">
+            <img src="images/chatgpt.png">
+            <img src="images/android.png">
+            <img src="images/coco.png">
+        </div>
+    </div>
+</div>
+<div class="stats">
+    <div>10K+ Jobs</div>
+    <div>5K+ Users</div>
+    <div>1K+ Companies</div>
+</div>
+<!-- FOOTER -->
+
+<script>
+
+let jobs = [];
+
+// LOAD JOBS FROM BACKEND
+async function loadJobs() {
+    try {
+        const res = await fetch("http://localhost:5000/jobs");
+        jobs = await res.json();
+
+        console.log("Jobs loaded:", jobs);
+    } catch (err) {
+        console.error("Error loading jobs:", err);
+    }
+}
+
+window.onload = loadJobs;
+const texts = [
+    "Discover opportunities, track your journey, and shape your career.",
+    "Find the right jobs and build your future with confidence.",
+    "Explore jobs, manage applications, and grow smarter every day.",
+    "Your career starts here — search, apply, succeed."
+];
+
+let index = 0;
+let charIndex = 0;
+let isDeleting = false;
+
+const typedText = document.getElementById("typedText");
+
+if (!typedText) {
+    console.error("typedText element not found!");
+}
+
+function typeEffect() {
+    let currentText = texts[index];
+
+    if (isDeleting) {
+        typedText.innerText = currentText.substring(0, charIndex--);
+    } else {
+        typedText.innerText = currentText.substring(0, charIndex++);
+    }
+
+    let speed = isDeleting ? 50 : 100;
+
+    if (!isDeleting && charIndex === currentText.length) {
+        speed = 1500; // pause at end
+        isDeleting = true;
+    } 
+    else if (isDeleting && charIndex === 0) {
+        isDeleting = false;
+        index = (index + 1) % texts.length;
+        speed = 500;
+    }
+
+    setTimeout(typeEffect, speed);
+}
+
+// start typing
+typeEffect();
+// SEARCH FUNCTION
+function searchJobs() {
+    const input = document.getElementById("searchInput").value.toLowerCase().trim();
+    const list = document.getElementById("jobList");
+
+    list.innerHTML = "";
+
+    const filtered = jobs.filter(job =>
+        job.title.toLowerCase().includes(input)
+    );
+
+    if (filtered.length === 0) {
+        list.innerHTML =list.innerHTML = "<p style='color: white; font-weight: bold;'>No jobs found </p>";;
+    } else {
+        filtered.forEach(job => {
+            list.innerHTML += `
+                <div class="job-card">
+                    
+                    <div class="job-info">
+                        <h3>${job.title}</h3>
+                        <p>${job.company}</p>
+                        <p>${job.location}</p>
+                    </div>
+
+                    <div class="job-actions">
+                        <button onclick="applyJob('${job._id}')">View</button>
+                    </div>
+
+                </div>
+            `;
+        });
+    }
+
+document.getElementById("jobResults").style.display = "block";
+
+// Auto scroll to results
+document.getElementById("jobResults").scrollIntoView({ 
+    behavior: "smooth" 
+});
+}
+
+// APPLY BUTTON LOGIC
+function applyJob(jobId) {
+    localStorage.setItem("selectedJob", jobId);
+
+    const user = localStorage.getItem("user");
+
+    if (!user) {
+        window.location.href = "login.html";
+    } else {
+        window.location.href = "job.html?id=" + jobId;
+    }
+}
+// 🔥 IMAGE SLIDER
+const sliderImages = [
+    "images/hero.jpg",
+    "images/25.png",
+    "images/4.png"
+];
+
+let sliderIndex = 0;
+const sliderImg = document.getElementById("sliderImage");
+
+setInterval(() => {
+
+    sliderImg.style.opacity = 0;
+
+    setTimeout(() => {
+        sliderIndex = (sliderIndex + 1) % sliderImages.length;
+        sliderImg.src = sliderImages[sliderIndex];
+        sliderImg.style.opacity = 1;
+    }, 400);
+
+}, 3000);
+</script>
+<div class="footer">
+    <p>© 2026 HireX | Developed by Rohith, Siva, Yaswanth, Mohith & Antariksh | @ IITP</p>
+</div>
+</body>
+</html>
