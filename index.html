@@ -117,7 +117,7 @@ let jobs = [];
 // LOAD JOBS FROM BACKEND
 async function loadJobs() {
     try {
-        const res = await fetch("http://localhost:5000/jobs");
+        const res = await fetch("https://hirex-backend-sio8.onrender.com/jobs");
         jobs = await res.json();
 
         console.log("Jobs loaded:", jobs);

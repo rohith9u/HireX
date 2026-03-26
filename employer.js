@@ -1,8 +1,8 @@
 function loadDashboardApplicants() {
 
     Promise.all([
-        fetch("http://localhost:5000/jobs").then(res => res.json()),
-        fetch("http://localhost:5000/applications").then(res => res.json())
+        fetch("https://hirex-backend-sio8.onrender.com/jobs").then(res => res.json()),
+        fetch("https://hirex-backend-sio8.onrender.com/applications").then(res => res.json())
     ])
     .then(([jobs, apps]) => {
 
@@ -104,13 +104,13 @@ let lastAppCount = Number(localStorage.getItem("lastAppCount")) || 0;
 // ==========================
 function checkNewApplicants() {
 
-    fetch("http://localhost:5000/applications")
+    fetch("https://hirex-backend-sio8.onrender.com/applications")
     .then(res => res.json())
     .then(apps => {
 
         let myEmail = (localStorage.getItem("userEmail") || "").toLowerCase();
 
-        fetch("http://localhost:5000/jobs")
+        fetch("https://hirex-backend-sio8.onrender.com/jobs")
         .then(res => res.json())
         .then(jobs => {
 
@@ -413,8 +413,8 @@ loadDashboardApplicants();
 // ==========================
 function loadStats() {
     Promise.all([
-        fetch("http://localhost:5000/jobs").then(res => res.json()),
-        fetch("http://localhost:5000/applications").then(res => res.json())
+        fetch("https://hirex-backend-sio8.onrender.com/jobs").then(res => res.json()),
+        fetch("https://hirex-backend-sio8.onrender.com/applications").then(res => res.json())
     ])
     .then(([jobs, apps]) => {
 
@@ -500,7 +500,7 @@ function loadProfile() {
         return;
     }
 
-    fetch(`http://localhost:5000/profile/${email}`)
+    fetch(`https://hirex-backend-sio8.onrender.com/profile/${email}`)
     .then(res => res.json())
     .then(user => {
 
@@ -520,7 +520,7 @@ function loadProfile() {
 
         // ✅ Default image fallback
         let imgSrc = user.profileImage
-            ? `http://localhost:5000/images/${user.profileImage}`
+            ? `https://hirex-backend-sio8.onrender.com/images/${user.profileImage}`
             :  "images/default-user.png";
 
     container.innerHTML = `
@@ -621,7 +621,7 @@ function saveProfile() {
         type: document.getElementById("type").value
     };
 
-    fetch("http://localhost:5000/update-profile", {
+    fetch("https://hirex-backend-sio8.onrender.com/update-profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
@@ -678,7 +678,7 @@ if (!/^[0-9]+$/.test(experience)) {
 // 🔥 SKILLS FORMAT CLEAN
 skills = skills.split(",").map(s => s.trim().toLowerCase()).join(",");
     // 🔥 send all fields to backend
-    fetch("http://localhost:5000/post-job", {
+    fetch("https://hirex-backend-sio8.onrender.com/post-job", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -733,7 +733,7 @@ skills = skills.split(",").map(s => s.trim().toLowerCase()).join(",");
 window.updateStatus = function(appId, status) {
 
 
-    fetch("http://localhost:5000/update-status", {
+    fetch("https://hirex-backend-sio8.onrender.com/update-status", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -751,8 +751,8 @@ window.updateStatus = function(appId, status) {
 // ==========================
 function loadMyJobs() {
     Promise.all([
-        fetch("http://localhost:5000/jobs").then(res => res.json()),
-        fetch("http://localhost:5000/applications").then(res => res.json())
+        fetch("https://hirex-backend-sio8.onrender.com/jobs").then(res => res.json()),
+        fetch("https://hirex-backend-sio8.onrender.com/applications").then(res => res.json())
     ])
     .then(([jobs, apps]) => {
 
@@ -828,8 +828,8 @@ ${job.status !== "closed" ?
 
 function loadApplicants() {
     Promise.all([
-        fetch("http://localhost:5000/jobs").then(res => res.json()),
-        fetch("http://localhost:5000/applications").then(res => res.json())
+        fetch("https://hirex-backend-sio8.onrender.com/jobs").then(res => res.json()),
+        fetch("https://hirex-backend-sio8.onrender.com/applications").then(res => res.json())
     ])
     .then(([jobs, apps]) => {
         let highlightId = localStorage.getItem("highlightApplicantId");
@@ -1015,7 +1015,7 @@ let missing = jobSkills.filter(skill =>
 
     ${
         app.resume
-        ? `<a href="http://localhost:5000/${app.resume}" target="_blank" class="resume-btn">
+        ? `<a href="https://hirex-backend-sio8.onrender.com/${app.resume}" target="_blank" class="resume-btn">
     View Resume
 </a>`
         : ""
@@ -1035,7 +1035,7 @@ function closeJob(jobId) {
 
     if (!confirm("Close this job?")) return;
 
-    fetch(`http://localhost:5000/close-job/${jobId}`, {
+    fetch(`https://hirex-backend-sio8.onrender.com/close-job/${jobId}`, {
         method: "PUT"
     })
     .then(res => {

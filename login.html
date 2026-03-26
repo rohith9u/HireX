@@ -91,7 +91,7 @@ function googleLogin() {
         };
 
         // 🔥 Send to backend
-        fetch("http://localhost:5000/google-login", {
+        fetch("https://hirex-backend-sio8.onrender.com/google-login", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -186,7 +186,7 @@ function login() {
     btn.disabled = true;
     btn.innerText = "Logging in...";
 
-    fetch("http://localhost:5000/login", {
+    fetch("https://hirex-backend-sio8.onrender.com/login", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"

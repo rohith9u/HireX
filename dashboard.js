@@ -1,6 +1,6 @@
     async function loadLatestJobs() {
     try {
-        const res = await fetch("http://localhost:5000/jobs");
+        const res = await fetch("https://hirex-backend-sio8.onrender.com/jobs");
         const jobs = await res.json();
 
         const container = document.getElementById("latestJobs");
@@ -234,7 +234,7 @@ function loadProfile() {
         return;
     }
 
-    fetch(`http://localhost:5000/profile/${email}`)
+    fetch(`https://hirex-backend-sio8.onrender.com/profile/${email}`)
     .then(res => res.json())
     .then(user => {
 
@@ -254,7 +254,7 @@ function loadProfile() {
 
         // ✅ Default image fallback
         let imgSrc = user.profileImage
-            ? `http://localhost:5000/images/${user.profileImage}`
+            ? `https://hirex-backend-sio8.onrender.com/images/${user.profileImage}`
             :  "images/default-user.png";
 
         // ✅ Render UI safely
@@ -358,7 +358,7 @@ function saveProfile() {
         type: document.getElementById("type").value
     };
 
-    fetch("http://localhost:5000/update-profile", {
+    fetch("https://hirex-backend-sio8.onrender.com/update-profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
@@ -370,7 +370,7 @@ function saveProfile() {
     });
 }
 function loadStats() {
-    fetch("http://localhost:5000/applications")
+    fetch("hhttps://hirex-backend-sio8.onrender.com/applications")
     .then(res => res.json())
     .then(data => {
 
@@ -414,8 +414,8 @@ function toggleNotif() {
 // ==========================
 function loadJobs() {
     Promise.all([
-        fetch("http://localhost:5000/jobs").then(res => res.json()),
-        fetch("http://localhost:5000/applications").then(res => res.json())
+        fetch("https://hirex-backend-sio8.onrender.com/jobs").then(res => res.json()),
+        fetch("https://hirex-backend-sio8.onrender.com/applications").then(res => res.json())
     ])
     .then(([jobs, apps]) => {
 
@@ -552,8 +552,8 @@ function viewJob(jobId) {
     console.log("View clicked:", jobId);
 
     Promise.all([
-        fetch("http://localhost:5000/jobs").then(res => res.json()),
-        fetch("http://localhost:5000/applications").then(res => res.json())
+        fetch("https://hirex-backend-sio8.onrender.com/jobs").then(res => res.json()),
+        fetch("https://hirex-backend-sio8.onrender.com/applications").then(res => res.json())
     ])
     .then(([jobs, apps]) => {
 
@@ -649,7 +649,7 @@ function goToApply(jobId) {
 // APPLY
 // ==========================
 function applyJob(jobId) {
-    fetch("http://localhost:5000/apply-job", {
+    fetch("https://hirex-backend-sio8.onrender.com/apply-job", {
         method: "POST",
         headers: {"Content-Type":"application/json"},
         body: JSON.stringify({ name:"User", email, jobId })
@@ -665,8 +665,8 @@ function applyJob(jobId) {
 // ==========================
 function loadApplications() {
     Promise.all([
-        fetch("http://localhost:5000/jobs").then(res => res.json()),
-        fetch("http://localhost:5000/applications").then(res => res.json())
+        fetch("https://hirex-backend-sio8.onrender.com/jobs").then(res => res.json()),
+        fetch("https://hirex-backend-sio8.onrender.com/applications").then(res => res.json())
     ])
     .then(([jobs, apps]) => {
 
@@ -741,7 +741,7 @@ div.innerHTML = `
 
     ${
         app.resume 
-        ? `<a href="http://localhost:5000/${app.resume}" target="_blank" class="resume-btn">View Resume</a>`
+        ? `<a href="https://hirex-backend-sio8.onrender.com/${app.resume}" target="_blank" class="resume-btn">View Resume</a>`
         : ""
     }
 `;
@@ -815,8 +815,8 @@ function logout() {
 }
 function loadNotifications() {
     Promise.all([
-        fetch("http://localhost:5000/jobs").then(res => res.json()),
-        fetch("http://localhost:5000/applications").then(res => res.json())
+        fetch("https://hirex-backend-sio8.onrender.com/jobs").then(res => res.json()),
+        fetch("https://hirex-backend-sio8.onrender.com/applications").then(res => res.json())
     ])
     .then(([jobs, apps]) => {
 

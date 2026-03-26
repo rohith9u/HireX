@@ -159,7 +159,7 @@ if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(email)) {
     formData.append("jobId", jobId);
     formData.append("resume", resumeFile);
 
-    fetch("http://localhost:5000/apply-job", {
+    fetch("https://hirex-backend-sio8.onrender.com/apply-job", {
         method: "POST",
         body: formData
     })
@@ -223,7 +223,7 @@ let userExp = Math.max(resumeExp, formExp);
         // 🔥 GET JOB
         let jobId = localStorage.getItem("selectedJobId");
 
-        let jobs = await fetch("http://localhost:5000/jobs").then(r => r.json());
+        let jobs = await fetch("https://hirex-backend-sio8.onrender.com/jobs").then(r => r.json());
         let job = jobs.find(j => j._id == jobId);
 
         let jobSkills = job.skills.toLowerCase().split(",");
