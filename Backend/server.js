@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 
+const bcrypt = require("bcrypt");
 const app = express();
 
 app.use(cors());
@@ -16,11 +17,12 @@ const startServer = async () => {
         console.log("✅ MongoDB Connected");
 
         app.listen(process.env.PORT || 5000, () => {
-            console.log("🚀 Sergive mver running");
+            console.log("🚀 Server running");
         });
 
     } catch (err) {
         console.log("❌ MongoDB Error:", err);
+        process.exit(1); // 🔥 important
     }
 };
 
@@ -237,7 +239,6 @@ function sendMail(to, subject, text) {
     });
 }
 
-const bcrypt = require("bcrypt");
 
 app.post("/login", async (req, res) => {
     try {
@@ -490,7 +491,7 @@ app.post("/schedule-interview", async (req, res) => {
         sendMail(
             updatedApp.email,
             "Interview Scheduled ",
-            `Your interview is scheduled on: ${interviewDate} for ${title}`,
+            `Your interview is scheduled on: ${interviewDate},
             "- HireX Team`"
         );
 
