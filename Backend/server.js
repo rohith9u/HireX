@@ -10,9 +10,9 @@ app.use(express.json());
 // ==========================
 // 🔥 CONNECT MONGODB
 // ==========================
-mongoose.connect("mongodb+srv://rohith12u:<Rohith@1201>@cluster0.xymhaku.mongodb.net/?appName=Cluster0")
+mongoose.connect(process.env.MONGO_URI)
 .then(() => console.log("MongoDB Connected ✅"))
-.catch(err => console.log(err));
+.catch(err => console.log("MongoDB Error ❌", err));
 mongoose.connect(process.env.MONGO_URI)
 // ==========================
 // 🔥 MODELS
