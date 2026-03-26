@@ -489,11 +489,10 @@ app.post("/schedule-interview", async (req, res) => {
 
         // ✅ MAIL
         sendMail(
-            updatedApp.email,
-            "Interview Scheduled ",
-            `Your interview is scheduled on: ${interviewDate},
-            "- HireX Team`"
-        );
+    updatedApp.email,
+    "Interview Scheduled",
+    `Your interview is scheduled on: ${interviewDate}`
+);
 
         res.json({ message: "Interview scheduled ✅" });
 
