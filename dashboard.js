@@ -68,13 +68,16 @@ let email = localStorage.getItem("userEmail") || sessionUser?.email || "";
 
 // DEFAULT
 window.onload = () => {
-    showSection("dashboard");
+    showSection("dashboard", false);
 
-    // 🔥 push initial state
-    history.replaceState({ section: "dashboard" }, "", "");
+    // 🔥 push once
+    history.pushState({ section: "dashboard" }, "", "");
 };
 
-function showSection(section) {
+function showSection(section, addToHistory = true) {
+    if (addToHistory) {
+    history.pushState({ section }, "", "");
+}
     currentSection = section;
 
     // 🔥 push state
@@ -958,7 +961,7 @@ function openJobFromDashboard(jobId) {
 }
 window.onpopstate = function () {
 
-    // 🔥 If NOT dashboard → go back to dashboard
+    // 🔥 If NOT dashboard → go to dashboard
     if (currentSection !== "dashboard") {
         showSection("dashboard", false);
     }
@@ -966,11 +969,14 @@ window.onpopstate = function () {
     // 🔥 If already on dashboard → ask logout
     else {
         showCustomModal("Are you sure you want to logout?", () => {
-            localStorage.removeItem("loggedInUser"); // ✅ correct
+            localStorage.removeItem("loggedInUser");
             window.location.replace("login.html");
         });
 
-        history.pushState({ section: "dashboard" }, "", "");
+        // 🔥 stay on dashboard
+        setTimeout(() => {
+            history.pushState({ section: "dashboard" }, "", "");
+        }, 0);
     }
 };
 loadNotifications();

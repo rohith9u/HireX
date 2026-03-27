@@ -102,14 +102,15 @@ window.onpopstate = function () {
 
     // 🔥 If already on dashboard → ask logout
     else {
-
         showCustomModal("Are you sure you want to logout?", () => {
             localStorage.clear();
             window.location.replace("employee.html");
         });
 
-        // stay on dashboard if NO
-        history.pushState({ section: "dashboard" }, "", "");
+        // 🔥 keep user on dashboard
+        setTimeout(() => {
+            history.pushState({ section: "dashboard" }, "", "");
+        }, 0);
     }
 };
 // 🔥 Load last count from storage
@@ -279,13 +280,17 @@ let email = (localStorage.getItem("userEmail") || sessionUser?.email || "").trim
 
 // 🔥 DEFAULT LOAD
 showSection("dashboard", false);
-history.replaceState({ section: "dashboard" }, "", "");
+
+// 🔥 push initial state (NOT replace)
+history.pushState({ section: "dashboard" }, "", "");
 
 // ==========================
 // 🔥 SECTION SWITCHING
 // ==========================
 function showSection(section, addToHistory = true) {
-
+    if (addToHistory) {
+    history.pushState({ section }, "", "");
+}
     currentSection = section;
     // 🔥 sync bottom nav active state
 // 🔥 sync bottom nav active state

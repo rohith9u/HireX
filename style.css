@@ -286,20 +286,12 @@
         0 0 10px rgba(59,130,246,0.6),
         0 0 20px rgba(34,197,94,0.4);
 }
+
 body {
-    margin: 0;
-    font-family: Arial;
-
-    background: #020617;  /* 🔥 solid dark base */
-
+    background-blend-mode: screen;
 }
-
-
 .topbar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
+    overflow:hidden;
 
     display: flex;
     justify-content: space-between;
@@ -2062,8 +2054,25 @@ h3 {
 
 /* HERO */
 .hero {
-    text-align: center;
-    padding: 100px 20px;
+    background:
+        linear-gradient(135deg, #020617, #020617),
+        url("images/ribbon.png") no-repeat left top,
+        url("images/ribbon.png") no-repeat right bottom;
+
+    background-size: 
+        cover,
+        900px,
+        1000px;
+
+    background-position:
+        center,
+        -300px -200px,
+        calc(100% + 350px) calc(100% + 250px);
+
+    background-repeat: no-repeat;
+
+    /* 🔥 THIS IS THE MAGIC */
+    background-blend-mode: normal, screen, screen;
 }
 
 .hero h1 {
@@ -2300,16 +2309,26 @@ h3 {
     align-items: center;
     justify-content: space-between;
 
-    padding: 80px;
-    gap: 50px;
+    height: calc(100vh - 70px); /* 🔥 exact fit below navbar */
+
+    padding: 0 80px; /* ❌ REMOVE TOP PADDING */
+    margin: 0;       /* ❌ REMOVE margin-top */
+
+    gap: 60px;
 }
 
 /* LEFT */
 .hero-left {
     flex: 1;
-    z-index: 1;
-    padding-left: 80px;   /* 🔥 push content inside */
     max-width: 550px;
+
+    position: relative;
+    z-index: 2;
+
+    margin-left: 20px;  /* 🔥 slight push from edge */
+}
+.hero-left {
+    margin-top: -20px; /* 🔥 fine tuning */
 }
 
 .hero-left h1 {
@@ -2322,11 +2341,14 @@ h3 {
 }
 /* RIGHT IMAGE */
 .hero-right {
-    width: 100%;
-    height: 400px; /* 🔥 FIXED HEIGHT */
+    flex: 1;
+
     display: flex;
+    justify-content: flex-end; /* 🔥 PUSH IMAGE RIGHT */
     align-items: center;
-     justify-content: flex-end;
+
+    position: relative;
+    z-index: 2;
 }
 
 .hero-right img {
@@ -2344,14 +2366,7 @@ h3 {
 .hero-right img {
     animation: float 4s ease-in-out infinite;
 }
-.hero-split {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
 
-    padding: 80px 60px;
-    gap: 40px;
-}
 .hero-split {
     position: relative;
     overflow: hidden;  /* 🔥 stops glow leaking outside */
@@ -2465,15 +2480,14 @@ body {
     }
 
     /* 🔹 HERO SECTION */
-    .hero-split {
+     .hero-split {
         flex-direction: column;
-        padding: 30px 20px;
+        padding: 100px 20px 40px; /* 🔥 spacing fix */
         text-align: center;
     }
 
     .hero-left {
         padding-left: 0;
-        max-width: 100%;
     }
 
     .hero-left h1 {
@@ -2485,9 +2499,11 @@ body {
     }
 
     .hero-right img {
-        width: 100%;
-        max-width: 100%;
-    }
+    width: 100%;
+    max-width: 650px;
+
+    margin-right: 0; /* 🔥 ensure no gap */
+}
 
     /* 🔹 SEARCH */
     .search-box {
@@ -2680,4 +2696,166 @@ body {
     font-size: 22px;
 
     box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+}
+body::before,
+body::after {
+    content: "";
+    position: fixed;
+    left: 0;
+    width: 100%;
+    height: 120px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* TOP GLOW */
+body::before {
+    top: 0;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(59,130,246,0.3),
+        rgba(34,197,94,0.3),
+        transparent
+    );
+    filter: blur(40px);
+}
+
+/* BOTTOM GLOW */
+body::after {
+    bottom: 0;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(34,197,94,0.2),
+        rgba(59,130,246,0.2),
+        transparent
+    );
+    filter: blur(50px);
+}
+body::before,
+body::after {
+    content: "";
+    position: fixed;
+    left: 0;
+    width: 100%;
+    height: 120px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* TOP GLOW */
+body::before {
+    top: 0;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(59,130,246,0.3),
+        rgba(34,197,94,0.3),
+        transparent
+    );
+    filter: blur(40px);
+}
+
+/* BOTTOM GLOW */
+body::after {
+    bottom: 0;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(34,197,94,0.2),
+        rgba(59,130,246,0.2),
+        transparent
+    );
+    filter: blur(50px);
+}
+body::before {
+    content: "";
+    position: fixed;
+    top: -100px;
+    left: -100px;
+    width: 400px;
+    height: 400px;
+
+    background: radial-gradient(
+        circle at center,
+        rgba(59,130,246,0.25),
+        rgba(34,197,94,0.15),
+        transparent 70%
+    );
+
+    transform: rotate(25deg);
+    filter: blur(60px);
+
+    z-index: 0;
+    pointer-events: none;
+}
+body::after {
+    content: "";
+    position: fixed;
+    bottom: -120px;
+    right: -120px;
+    width: 450px;
+    height: 450px;
+
+    background: radial-gradient(
+        circle at center,
+        rgba(34,197,94,0.2),
+        rgba(59,130,246,0.2),
+        transparent 70%
+    );
+
+    transform: rotate(-30deg);
+    filter: blur(70px);
+
+    z-index: 0;
+    pointer-events: none;
+}
+.hero {
+    position: relative;
+    overflow: hidden; /* 🔥 prevents overflow */
+}
+
+@media (max-width: 768px) {
+    body {
+        background-size: 400px, 450px, cover;
+
+        background-position:
+            -150px -100px,
+            calc(100% + 150px) calc(100% + 120px),
+            center;
+    }
+}
+.hero {
+    height: 100vh;
+    position: relative;
+    overflow: hidden;
+}
+
+/* 🔥 BACKGROUND RIBBON */
+.hero::before {
+    content: "";
+    position: absolute;
+
+    top: -150px;
+    left: -150px;
+
+    width: 700px;
+    height: 700px;
+
+    background: url("images/ribbon.png") no-repeat;
+    background-size: contain;
+
+    opacity: 0.5;
+
+    z-index: 0;
+}
+
+/* 🔥 KEEP CONTENT ABOVE */
+.hero-split {
+    position: relative;
+    z-index: 2;
+}
+.hero::before {
+    border: 2px solid red;
 }
