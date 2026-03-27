@@ -101,17 +101,16 @@ window.onpopstate = function () {
     }
 
     // 🔥 If already on dashboard → ask logout
-    else {
-        showCustomModal("Are you sure you want to logout?", () => {
-            localStorage.clear();
-            window.location.replace("employee.html");
-        });
+   else {
+    let confirmLogout = confirm("Are you sure you want to logout?");
 
-        // 🔥 keep user on dashboard
-        setTimeout(() => {
-            history.pushState({ section: "dashboard" }, "", "");
-        }, 0);
+    if (confirmLogout) {
+        localStorage.clear();
+        window.location.replace("employee.html");
+    } else {
+        history.pushState({ section: "dashboard" }, "", "");
     }
+}
 };
 // 🔥 Load last count from storage
 let lastAppCount = Number(localStorage.getItem("lastAppCount")) || 0;
