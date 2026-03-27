@@ -54,10 +54,8 @@ let role = (sessionUser?.role || "").toLowerCase();
 
 console.log("ROLE DEBUG:", role, sessionUser);
 
-if (!sessionUser) {
-    showToast("Access Denied!", "error");
-    setTimeout(() => window.location.href = "login.html", 1500);
-}
+
+
 
 let email = localStorage.getItem("userEmail") || sessionUser?.email || "";
 
@@ -370,7 +368,7 @@ function saveProfile() {
     });
 }
 function loadStats() {
-    fetch("hhttps://hirex-backend-sio8.onrender.com/applications")
+    fetch("https://hirex-backend-sio8.onrender.com/applications")
     .then(res => res.json())
     .then(data => {
 

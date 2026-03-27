@@ -190,7 +190,7 @@ app.post("/google-login", async (req, res) => {
                 firstName,
                 lastName,
                 email,
-                role: "",     // 🔥 VERY IMPORTANT
+                role: "user",     // 🔥 VERY IMPORTANT
                 city: "",
                 gender: ""
             });
@@ -223,7 +223,7 @@ const transporter = nodemailer.createTransport({
 });
 
 function sendMail(to, subject, text) {
-    console.log("🚀 sendMail CALLED for:", to);
+
 
     transporter.sendMail({
         from: "HireX <hirex78@gmail.com>",
@@ -587,7 +587,7 @@ We will update you soon.
 // 🔥 TEST ROUTE
 // ==========================
 app.get("/", (req, res) => {
-    res.send("Backend running 🚀");
+    res.send("Backend running ");
 });
 
 // ==========================

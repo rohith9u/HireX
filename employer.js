@@ -191,22 +191,6 @@ function toggleNotif() {
 // ==========================
 // 🔔 TOAST MESSAGE
 // ==========================
-function showToast(message, type="success") {
-
-    let toast = document.getElementById("toast");
-    if (!toast) return;
-
-    toast.innerText = message;
-    toast.className = "show";
-
-    if(type === "error") {
-        toast.classList.add("error");
-    }
-
-    setTimeout(() => {
-        toast.className = "";
-    }, 3000);
-}
 
 
 // ==========================
@@ -260,7 +244,6 @@ function addNotification(msg) {
 }
 function showToast(message, type="success") {
     let toast = document.getElementById("toast");
-
     toast.innerText = message;
     toast.className = "show";
 
@@ -272,6 +255,8 @@ function showToast(message, type="success") {
         toast.className = "";
     }, 3000);
 }
+
+
 // 🔐 ACCESS CONTROL
 let sessionUser = JSON.parse(localStorage.getItem("loggedInUser") || "null");
 
