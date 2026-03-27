@@ -49,9 +49,7 @@
         display: none; /* hide sidebar on mobile */
     }
 
-    .layout {
-        flex-direction: column;
-    }
+ 
 
     .main {
         width: 100%;
@@ -292,9 +290,8 @@ body {
     margin: 0;
     font-family: Arial;
 
-    body {
     background: #020617;  /* 🔥 solid dark base */
-}
+
 }
 
 
@@ -437,6 +434,17 @@ body {
     display: flex;
     gap: 15px;
     margin-bottom: 20px;
+}
+@media (max-width: 768px) {
+    .stats {
+        display: block !important;
+    }
+
+    .stat-card {
+        width: 100% !important;
+        margin-bottom: 15px;
+        flex: unset !important;
+    }
 }
 .stat-card {
     flex: 1;
@@ -2112,12 +2120,7 @@ h3 {
 }
 
 /* STATS */
-.stats {
-    display: flex;
-    justify-content: center;
-    gap: 40px;
-    padding: 40px;
-}
+
 
 .stats div {
     font-size: 18px;
@@ -2562,13 +2565,7 @@ h3 {
         flex-direction: column;
     }
 
-    .sidebar {
-        width: 100%;
-        height: auto;
-        display: flex;
-        justify-content: space-around;
-        padding: 10px;
-    }
+
 
     .main {
         padding: 10px;
@@ -2577,9 +2574,7 @@ h3 {
     margin-top: 70px;
 }
     /* 🔹 STATS */
-    .stats {
-        flex-direction: column;
-    }
+    
 
     /* 🔹 PROFILE */
     .profile-form {
