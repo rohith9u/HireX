@@ -230,13 +230,27 @@ function saveProfile() {
     })
     .then(res => res.json())
     .then(data => {
-        alert("Profile saved ✅");
+        showToast("Profile created successfully");
         window.location.href = "dashboard.html";
     })
     .catch(err => {
         console.log(err);
         alert("Error saving profile");
     });
+}
+function showToast(message, type = "success") {
+    let toast = document.getElementById("toast");
+
+    toast.innerText = message;
+    toast.className = "show";
+
+    if (type === "error") {
+        toast.classList.add("error");
+    }
+
+    setTimeout(() => {
+        toast.className = "";
+    }, 3000);
 }
 </script>
 
