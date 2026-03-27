@@ -1,4 +1,6 @@
 let currentSection = "dashboard";
+// Force history entry (so back button works)
+history.pushState({ page: "dashboard" }, "", "");
 function loadDashboardApplicants() {
 
     Promise.all([
@@ -112,6 +114,29 @@ window.onpopstate = function () {
     }
 }
 };
+window.addEventListener("popstate", function () {
+
+    console.log("BACK PRESSED"); // debug
+
+    if (currentSection !== "dashboard") {
+        showSection("dashboard", false);
+
+        // push again so user stays inside app
+        history.pushState({ page: "dashboard" }, "", "");
+    }
+
+    else {
+        let confirmLogout = confirm("Are you sure you want to logout?");
+
+        if (confirmLogout) {
+            localStorage.clear();
+            window.location.href = "employee.html";
+        } else {
+            // keep user on page
+            history.pushState({ page: "dashboard" }, "", "");
+        }
+    }
+});
 // 🔥 Load last count from storage
 let lastAppCount = Number(localStorage.getItem("lastAppCount")) || 0;
 
