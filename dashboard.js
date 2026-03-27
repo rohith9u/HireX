@@ -78,7 +78,7 @@ function showSection(section) {
     currentSection = section;
 
     // 🔥 push state
-    history.pushState({ section }, "", "");
+    history.pushState({ section }, "", `#${section}`);
     let content = document.getElementById("content");
 
     if(section === "dashboard") {
@@ -176,26 +176,6 @@ function showSection(section) {
 
 </div>
 `;
-window.onpopstate = function () {
-
-    // 🔥 If NOT dashboard → go back to dashboard
-    if (currentSection !== "dashboard") {
-        showSection("dashboard");
-    }
-
-    // 🔥 If already on dashboard → ask logout
-    else {
-
-        showCustomModal("Are you sure you want to logout?", () => {
-            // ✅ YES clicked
-            localStorage.removeItem("user");
-            window.location.replace("login.html");
-        });
-
-        // 🔥 IMPORTANT: keep user on dashboard if NO
-        history.pushState({ section: "dashboard" }, "", "");
-    }
-};
 loadJobs();
     }
 
@@ -884,7 +864,7 @@ function applyFilters() {
 // LOGOUT
 // ==========================
 function logout() {
-    localStorage.removeItem("user");
+    localStorage.removeItem("loggedInUser"); 
     window.location.replace("login.html");
 }
 function loadNotifications() {
@@ -976,5 +956,21 @@ function openJobFromDashboard(jobId) {
         subtree: true
     });
 }
+window.onpopstate = function () {
 
+    // 🔥 If NOT dashboard → go back to dashboard
+    if (currentSection !== "dashboard") {
+        showSection("dashboard", false);
+    }
+
+    // 🔥 If already on dashboard → ask logout
+    else {
+        showCustomModal("Are you sure you want to logout?", () => {
+            localStorage.removeItem("loggedInUser"); // ✅ correct
+            window.location.replace("login.html");
+        });
+
+        history.pushState({ section: "dashboard" }, "", "");
+    }
+};
 loadNotifications();
