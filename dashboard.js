@@ -1,7 +1,10 @@
    let currentSection = "dashboard";
-   if (!localStorage.getItem("user")) {
+  let sessionUser = JSON.parse(localStorage.getItem("loggedInUser") || "null");
+
+if (!sessionUser) {
     window.location.replace("login.html");
 }
+
     async function loadLatestJobs() {
     try {
         const res = await fetch("https://hirex-backend-sio8.onrender.com/jobs");
@@ -46,7 +49,7 @@
 // 🔥 CALL FUNCTION
 
 // 🔐 ACCESS CONTROL
-let sessionUser = JSON.parse(localStorage.getItem("loggedInUser") || "null");
+
 // ✅ FIX: prevent returning to apply page
 let justApplied = localStorage.getItem("justApplied");
 
