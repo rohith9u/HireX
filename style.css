@@ -16,16 +16,18 @@
     .stats {
         display: flex;
         flex-direction: column;
-        gap: 15px;
-        padding: 10px;
+        gap: 12px;
+        margin-top: 15px;
     }
 
     .stat-card {
         width: 100%;
-        padding: 20px;
-        font-size: 18px;
-        border-radius: 14px;
+        padding: 16px;
+        border-radius: 12px;
+        font-size: 15px;
     }
+
+
 
     .main {
         padding: 10px;
@@ -369,6 +371,27 @@ body {
     height: 100vh;
     padding: 20px;
     border-right: 1px solid #1e293b;
+}
+@media (max-width: 768px) {
+
+    .sidebar {
+        display: none !important; /* 🔥 FORCE FIX */
+    }
+
+}
+@media (max-width: 768px) {
+
+    .topbar {
+        flex-direction: row !important;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 15px;
+    }
+
+    .top-actions {
+        gap: 10px;
+    }
+
 }
 
 .sidebar a {
@@ -2550,7 +2573,9 @@ h3 {
     .main {
         padding: 10px;
     }
-
+.main {
+    margin-top: 70px;
+}
     /* 🔹 STATS */
     .stats {
         flex-direction: column;
