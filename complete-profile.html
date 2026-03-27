@@ -229,14 +229,26 @@ function saveProfile() {
         })
     })
     .then(res => res.json())
-    .then(data => {
-        showToast("Profile created successfully");
+.then(data => {
+
+    console.log("SERVER RESPONSE:", data); // 🔍 debug
+
+    if (data.error) {
+        showToast(data.error, "error");
+        return;
+    }
+
+    // ✅ success
+    showToast("Profile created successfully 🎉");
+
+    setTimeout(() => {
         window.location.href = "dashboard.html";
-    })
-    .catch(err => {
-        console.log(err);
-        alert("Error saving profile");
-    });
+    }, 800);
+})
+.catch(err => {
+    console.log("FETCH ERROR:", err);
+    showToast("Error saving profile ❌", "error");
+});
 }
 function showToast(message, type = "success") {
     let toast = document.getElementById("toast");
