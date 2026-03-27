@@ -76,7 +76,7 @@ window.onload = () => {
 
 function showSection(section, addToHistory = true) {
     if (addToHistory) {
-    history.pushState({ section }, "", "");
+    history.pushState({ section }, "", `#${section}`);
 }
     currentSection = section;
 
