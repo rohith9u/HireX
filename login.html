@@ -213,9 +213,9 @@ function login() {
             setTimeout(() => {
 
                 if (role === "user") {
-                    window.location.href = "dashboard.html";
+                    window.location.replace("dashboard.html");
                 } else if (role === "employer") {
-                    window.location.href = "employer.html";
+                    window.location.replace ("employer.html");
                 } else {
                     console.error("Invalid role:", role);
                     showToast("Unknown user role ❌", "error");
@@ -242,6 +242,11 @@ document.getElementById("password").addEventListener("keypress", function(e) {
         login();
     }
 });
+</script>
+<script id="authcheck">
+if (localStorage.getItem("user")) {
+    window.location.replace("dashboard.html");
+}
 </script>
 </body>
 </html>

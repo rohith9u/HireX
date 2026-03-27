@@ -1,3 +1,6 @@
+    if (!localStorage.getItem("user")) {
+    window.location.replace("login.html");
+}
     async function loadLatestJobs() {
     try {
         const res = await fetch("https://hirex-backend-sio8.onrender.com/jobs");
@@ -851,8 +854,8 @@ function applyFilters() {
 // LOGOUT
 // ==========================
 function logout() {
-    localStorage.clear();
-    window.location.href = "login.html";
+    localStorage.removeItem("user");
+    window.location.replace("login.html");
 }
 function loadNotifications() {
     Promise.all([
