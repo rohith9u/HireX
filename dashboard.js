@@ -177,6 +177,49 @@ loadJobs();
         <div id="profileBox"></div>`;   
     loadProfile(); }
     }
+// 📱 Bottom nav navigation
+function navigate(section) {
+    showSection(section);
+
+    // update active tab
+    document.querySelectorAll(".nav-item").forEach(item => {
+        item.classList.remove("active");
+    });
+
+    event.currentTarget.classList.add("active");
+}
+// 📱 Swipe navigation
+let startX = 0;
+let endX = 0;
+
+document.addEventListener("touchstart", (e) => {
+    startX = e.changedTouches[0].screenX;
+});
+
+document.addEventListener("touchend", (e) => {
+    endX = e.changedTouches[0].screenX;
+    handleSwipe();
+});
+
+function handleSwipe() {
+    let diff = startX - endX;
+
+    if (Math.abs(diff) < 50) return;
+
+    let sections = ["dashboard", "jobs", "applications", "profile"];
+
+    let currentIndex = sections.findIndex(s =>
+        document.querySelector(".nav-item.active span").innerText.toLowerCase().includes(s)
+    );
+
+    if (diff > 0 && currentIndex < sections.length - 1) {
+        // swipe left
+        navigate(sections[currentIndex + 1]);
+    } else if (diff < 0 && currentIndex > 0) {
+        // swipe right
+        navigate(sections[currentIndex - 1]);
+    }
+}
 function toggleEdit() {
 
     // enable all inputs EXCEPT role
