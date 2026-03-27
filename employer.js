@@ -1,3 +1,4 @@
+let currentSection = "dashboard";
 function loadDashboardApplicants() {
 
     Promise.all([
@@ -92,10 +93,25 @@ function goToApplicant(jobId, appId) {
     localStorage.setItem("highlightApplicantId", appId);
     showSection("applicants");
 }
-// ==========================
-// 🔔 NOTIFICATION SYSTEM
-// ==========================
+window.onpopstate = function () {
 
+    // 🔥 If NOT dashboard → go back to dashboard
+    if (currentSection !== "dashboard") {
+        showSection("dashboard", false);
+    }
+
+    // 🔥 If already on dashboard → ask logout
+    else {
+
+        showCustomModal("Are you sure you want to logout?", () => {
+            localStorage.clear();
+            window.location.replace("employee.html");
+        });
+
+        // stay on dashboard if NO
+        history.pushState({ section: "dashboard" }, "", "");
+    }
+};
 // 🔥 Load last count from storage
 let lastAppCount = Number(localStorage.getItem("lastAppCount")) || 0;
 
@@ -218,17 +234,7 @@ setInterval(checkNewApplicants, 5000);function updateNotificationUI(newApps) {
     });
 }
 
-function toggleNotif() {
-    let box = document.getElementById("notifBox");
-    let content = document.getElementById("notifContent");
 
-    // If empty → show placeholder
-    if (content.innerHTML.trim() === "") {
-        content.innerHTML = "<p class='empty-msg'>No notifications yet</p>";
-    }
-
-    box.classList.toggle("show");
-}
 function addNotification(msg) {
     let content = document.getElementById("notifContent");
 
@@ -272,12 +278,37 @@ if (!sessionUser) {
 let email = (localStorage.getItem("userEmail") || sessionUser?.email || "").trim().toLowerCase();
 
 // 🔥 DEFAULT LOAD
-showSection("dashboard");
+showSection("dashboard", false);
+history.replaceState({ section: "dashboard" }, "", "");
 
 // ==========================
 // 🔥 SECTION SWITCHING
 // ==========================
-function showSection(section) {
+function showSection(section, addToHistory = true) {
+
+    currentSection = section;
+    // 🔥 sync bottom nav active state
+// 🔥 sync bottom nav active state
+document.querySelectorAll(".bottom-nav .nav-item")
+    .forEach(item => item.classList.remove("active"));
+
+let map = {
+    dashboard: 0,
+    post: 2,
+    jobs: 1,
+    applicants: 3,
+    profile: 4
+};
+
+let items = document.querySelectorAll(".bottom-nav .nav-item");
+
+if (items[map[section]] !== undefined) {
+    items[map[section]].classList.add("active");
+}
+    if (addToHistory) {
+        history.pushState({ section }, "", "");
+    }
+
     let content = document.getElementById("content");
 
     // 📊 DASHBOARD
@@ -1037,7 +1068,7 @@ function closeJob(jobId) {
 // 🔓 LOGOUT
 function logout() {
     localStorage.clear();
-    window.location.href = "login.html";
+    window.location.replace("employee.html"); // ✅ FIXED
 }
 
     let user = JSON.parse(localStorage.getItem("loggedInUser"));
@@ -1054,4 +1085,14 @@ function logout() {
 function goToInterview(appId) {
     localStorage.setItem("selectedAppId", appId);
     window.location.href = "interview.html";
+}
+function navigateEmp(section, el) {
+
+    showSection(section);
+
+    // update active tab
+    document.querySelectorAll(".bottom-nav .nav-item")
+        .forEach(item => item.classList.remove("active"));
+
+    el.classList.add("active");
 }

@@ -2660,3 +2660,24 @@ body {
         display: none !important;
     }
 }
+/* 🔥 CENTER FLOATING POST BUTTON */
+.post-special {
+    position: relative;
+    top: -20px;
+
+    background: linear-gradient(135deg, #3b82f6, #22c55e);
+    color: white;
+
+    width: 55px;
+    height: 55px;
+
+    border-radius: 50%;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    font-size: 22px;
+
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+}
