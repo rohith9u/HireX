@@ -107,30 +107,23 @@ function googleLogin() {
             localStorage.setItem("loggedInUser", JSON.stringify(data.user));
             localStorage.setItem("userEmail", data.user.email);
 
-            showToast("Google Login Successful");
+            // OPTIONAL: show toast but don't wait
+showToast("Google Login Successful");
 
-            // 🔥 IMPORTANT LOGIC
-            setTimeout(() => {
+// 🔥 INSTANT REDIRECT (NO DELAY)
+if (data.isNewUser || !data.user.role) {
+    window.location.replace("complete-profile.html");
+} else {
+    let role = data.user.role.toLowerCase();
 
-                // ✅ NEW USER OR NO ROLE → COMPLETE PROFILE
-                if (data.isNewUser || !data.user.role) {
-                    window.location.href = "complete-profile.html";
-                    return;
-                }
-
-                // ✅ EXISTING USER
-                let role = data.user.role.toLowerCase();
-
-                if (role === "user") {
-                    window.location.href = "dashboard.html";
-                } else if (role === "employer") {
-                    window.location.href = "employer.html";
-                } else {
-                    // fallback
-                    window.location.href = "dashboard.html";
-                }
-
-            }, 1000);
+    if (role === "user") {
+        window.location.replace("dashboard.html");
+    } else if (role === "employer") {
+        window.location.replace("employer.html");
+    } else {
+        window.location.replace("dashboard.html");
+    }
+}
 
         })
         .catch(err => {
