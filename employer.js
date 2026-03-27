@@ -97,22 +97,26 @@ function goToApplicant(jobId, appId) {
 }
 window.onpopstate = function () {
 
-    // 🔥 If NOT dashboard → go back to dashboard
     if (currentSection !== "dashboard") {
         showSection("dashboard", false);
-    }
 
-    // 🔥 If already on dashboard → ask logout
-   else {
-    let confirmLogout = confirm("Are you sure you want to logout?");
-
-    if (confirmLogout) {
-        localStorage.clear();
-        window.location.replace("employee.html");
-    } else {
+        // keep user inside app
         history.pushState({ section: "dashboard" }, "", "");
     }
-}
+
+    else {
+        let confirmLogout = confirm("Are you sure you want to logout?");
+
+        if (confirmLogout) {
+            localStorage.removeItem("loggedInUser");
+
+            // 🔥 EMPLOYER goes to login
+            window.location.href = "login.html";
+        } else {
+            // stay on dashboard
+            history.pushState({ section: "dashboard" }, "", "");
+        }
+    }
 };
 window.addEventListener("popstate", function () {
 

@@ -80,8 +80,6 @@ function showSection(section, addToHistory = true) {
 }
     currentSection = section;
 
-    // 🔥 push state
-    history.pushState({ section }, "", `#${section}`);
     let content = document.getElementById("content");
 
     if(section === "dashboard") {
@@ -961,22 +959,21 @@ function openJobFromDashboard(jobId) {
 }
 window.onpopstate = function () {
 
-    // 🔥 If NOT dashboard → go to dashboard
     if (currentSection !== "dashboard") {
         showSection("dashboard", false);
+        history.pushState({ section: "dashboard" }, "", "");
     }
 
-    // 🔥 If already on dashboard → ask logout
     else {
-        showCustomModal("Are you sure you want to logout?", () => {
-            localStorage.removeItem("loggedInUser");
-            window.location.replace("login.html");
-        });
+        let confirmLogout = confirm("Are you sure you want to logout?");
 
-        // 🔥 stay on dashboard
-        setTimeout(() => {
+        if (confirmLogout) {
+            localStorage.removeItem("loggedInUser");
+            window.location.href = "login.html";  // ✅ only here
+        } else {
+            // ✅ stay on dashboard
             history.pushState({ section: "dashboard" }, "", "");
-        }, 0);
+        }
     }
 };
 loadNotifications();
