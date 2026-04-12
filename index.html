@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <title>Job Portal</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+.0">
 <link rel="stylesheet" href="style.css">
 </head>
 
@@ -19,29 +20,51 @@
     </div>
 </div>
 
-<!-- HERO -->
-<div class="hero">
-<div class="hero-split">
+<section class="hero">
 
-    <!-- LEFT -->
-    <div class="hero-left">
-       <h1 class="hero-text">
-    <span id="typedText"></span><span class="cursor">|</span>
-</h1>
+    <!-- background orb right side -->
+    <div style="
+        position: absolute;
+        width: 500px; height: 500px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(34,197,94,0.1) 0%, transparent 70%);
+        bottom: -100px; right: -80px;
+        pointer-events: none; z-index: 0;
+    "></div>
+
+    <div class="hero-content">
+
+        <div class="hero-badge">
+            📈 10K+ Jobs Available Right Now
+        </div>
+
+        <h1 class="hero-title">
+            Your Next Career Move
+            <span class="gradient">Starts Here</span>
+        </h1>
+
+        <p class="hero-subtitle">
+            <span id="typedText"></span><span class="cursor">|</span>
+        </p>
 
         <div class="search-box">
-            <input type="text" id="searchInput" placeholder="Search jobs..." 
-       onkeypress="if(event.key === 'Enter') searchJobs()">
-            <button onclick="searchJobs()">Search</button>
-        </div>  
-            
-        
+            <input
+                type="text"
+                id="searchInput"
+                placeholder="🔍  Search jobs, companies, skills..."
+                onkeypress="if(event.key === 'Enter') searchJobs()"
+            >
+            <button onclick="searchJobs()">Search Jobs</button>
+        </div>
+
     </div>
+
+</section>
 
     <!-- RIGHT -->
     <div class="hero-right">
     <div class="image-slider">
-        <img id="sliderImage" src="images/hero.jpg">
+       
     </div>
 </div>
 </div>
