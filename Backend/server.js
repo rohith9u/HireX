@@ -271,6 +271,11 @@ app.post("/login", async (req, res) => {
 });
 const multer = require("multer");
 const path = require("path");
+const fs = require("fs");
+
+if (!fs.existsSync("uploads")) {
+    fs.mkdirSync("uploads");
+}
 
 // ✅ STEP 1: storage
 const storage = multer.diskStorage({
