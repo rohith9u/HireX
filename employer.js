@@ -392,10 +392,10 @@ loadDashboardApplicants();
                 <option value="">Domain</option>
                 <option>Technology & IT</option>
                 <option>Business & Management</option>
-                <option>Finance & Accounts</option>
+                <option>Finance</option>
                 <option>Sales & Marketing</option>
                 <option>Engineering & Core Technical</option>
-                <option>Healthcare Jobs</option>
+                <option>Healthcare</option>
                 <option>Other's</option>
             </select>
             <select id="jobType">
