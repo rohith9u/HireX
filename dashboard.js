@@ -136,7 +136,7 @@ function showSection(section, addToHistory = true) {
             <option>Business & Management</option>
             <option>Finance</option>
             <option>Sales & Marketing</option>
-            <option>Engineering</option>
+            <option>Engineering & Core Technical</option>
             <option>Healthcare</option>
             <option>Other's</option>
         </select>
