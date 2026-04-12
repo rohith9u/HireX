@@ -112,7 +112,7 @@ document.getElementById("skills").addEventListener("input", analyzeResume);
 document.getElementById("experience").addEventListener("input", analyzeResume);
 function submitApplication() {
     let name = document.getElementById("name").value.trim();
-    let email = localStorage.getItem("userEmail");
+    let email = document.getElementById("email").value.trim();
     let phone = document.getElementById("phone").value.trim();
     let city = document.getElementById("city").value.trim();
     let degree = document.getElementById("degree").value.trim();

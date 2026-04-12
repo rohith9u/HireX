@@ -242,8 +242,15 @@ function saveProfile() {
     showToast("Profile created successfully 🎉");
 
     setTimeout(() => {
+
+    if (selectedRole === "employer") {
+        window.location.href = "employer.html";
+    } 
+    else {
         window.location.href = "dashboard.html";
-    }, 800);
+    }
+
+}, 800);
 })
 .catch(err => {
     console.log("FETCH ERROR:", err);
