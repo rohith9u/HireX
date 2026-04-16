@@ -10,36 +10,53 @@
 
 <body>
 
-<!-- TOPBAR -->
-<div class="topbar">
-    <img src="images/logo.png" class="logo-img">
-    <div class="nav-links">
-        <a href="index.html">Home</a>
-        <a href="#">Login</a>
-        <a href="register.html">Register</a>
-    </div>
+
+
+
+<div class="login-page">
+<div class="login-container">
+
+        <div class="left-panel">
+
+<img src="login-art.png">
+
+<div class="left-content">
+<img src="images/logo.png">
+<p>Your career starts here. Connect with top companies and opportunities.</p>
 </div>
 
-
-<div class="page-wrapper">
-
-    <div class="main-card">
-
-        <div class="left-panel"></div>
+</div>
 
         <div class="right-panel">
             <div class="login-card">
-                <h2 class = "logintitle">Login</h2>
+               <h1 class="login-title">Welcome back</h1>
+<p class="login-sub">Sign in to your account to continue</p>
 
-               <input type="email" id="email" placeholder="Email">
-<input type="password" id="password" placeholder="Password">
+<label>Email</label>
+<input type="email" id="email" placeholder="your@email.com">
+
+<label>Password</label>
+<input type="password" id="password" placeholder="••••••••">
+
+<button id="loginBtn" class="signin-btn" onclick="login()">Sign In</button>
+
+<div class="divider">
+<span>OR</span>
+</div>
+
 <button onclick="googleLogin()" class="google-btn">
-    <img src="images/google.png" width="18" style="vertical-align:middle;">
-    Continue with Google
+<img src="images/google.png" width="20">
+Continue with Google
 </button>
-<button id="loginBtn" onclick="login()">Login</button>
 
-               <p>Don't have an account? <a href="register.html">Register</a></p>
+<p class="register-text">
+Don't have an account?
+<a href="register.html">Register</a>
+</p>
+
+<p class="back-home">
+<a href="index.html">Back to Home</a>
+</p>
             </div>
         </div>
 
