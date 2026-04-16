@@ -95,29 +95,7 @@ function goToApplicant(jobId, appId) {
     localStorage.setItem("highlightApplicantId", appId);
     showSection("applicants");
 }
-window.onpopstate = function () {
 
-    if (currentSection !== "dashboard") {
-        showSection("dashboard", false);
-
-        // keep user inside app
-        history.pushState({ section: "dashboard" }, "", "");
-    }
-
-    else {
-        let confirmLogout = confirm("Are you sure you want to logout?");
-
-        if (confirmLogout) {
-            localStorage.removeItem("loggedInUser");
-
-            // 🔥 EMPLOYER goes to login
-            window.location.href = "login.html";
-        } else {
-            // stay on dashboard
-            history.pushState({ section: "dashboard" }, "", "");
-        }
-    }
-};
 window.addEventListener("popstate", function () {
 
     console.log("BACK PRESSED"); // debug
@@ -134,7 +112,7 @@ window.addEventListener("popstate", function () {
 
         if (confirmLogout) {
             localStorage.clear();
-            window.location.href = "employee.html";
+            window.location.href = "login.html";
         } else {
             // keep user on page
             history.pushState({ page: "dashboard" }, "", "");
@@ -565,7 +543,7 @@ function loadProfile() {
         // ✅ Default image fallback
         let imgSrc = user.profileImage
             ? `https://hirex-backend-sio8.onrender.com/images/${user.profileImage}`
-            :  "images/default-user.png";
+            :  "images/profile.png";
 
     container.innerHTML = `
         <div class="profile-wrapper">
@@ -1101,7 +1079,7 @@ function closeJob(jobId) {
 // 🔓 LOGOUT
 function logout() {
     localStorage.clear();
-    window.location.replace("employee.html"); // ✅ FIXED
+    window.location.replace("login.html"); // ✅ FIXED
 }
 
     let user = JSON.parse(localStorage.getItem("loggedInUser"));
