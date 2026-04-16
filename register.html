@@ -3,778 +3,217 @@
 <head>
     <meta charset="UTF-8">
     <title>Register - Job Portal</title>
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-        :root {
-            --bg-dark:      #080c14;
-            --bg-panel:     #0d1120;
-            --bg-card:      #111827;
-            --bg-input:     #0f1520;
-
-            --navy:         #2b2f6b;
-
-            --grey:         #8a94a6;
-            --grey-light:   #b0bac8;
-            --grey-dim:     #556070;
-            --grey-glow:    rgba(138,148,166,0.13);
-            --grey-border:  rgba(138,148,166,0.22);
-
-            --text-bright:  #e8ecf4;
-            --text-mid:     #9aa3b5;
-            --text-dim:     #5a6478;
-            --border:       rgba(255,255,255,0.08);
-        }
-
-        html, body { height: 100%; }
-
-        body {
-            font-family: 'DM Sans', sans-serif;
-            background: var(--bg-dark);
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            color: var(--text-bright);
-        }
-
-        /* ── TOPBAR ─────────────────────────────────── */
-        .topbar {
-            position: fixed;
-            top: 0; left: 0; right: 0;
-            z-index: 100;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 40px;
-            height: 56px;
-            background: rgba(8,12,20,0.97);
-            border-bottom: 1px solid var(--border);
-            backdrop-filter: blur(12px);
-        }
-
-        .logo-img {
-            height: 34px;
-            width: auto;
-            object-fit: contain;
-        }
-
-        .nav-links { display: flex; gap: 28px; }
-        .nav-links a {
-            color: var(--text-mid);
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 500;
-            transition: color 0.2s;
-        }
-        .nav-links a:hover { color: var(--grey-light); }
-        .nav-links a.active { color: var(--text-bright); font-weight: 600; }
-
-        /* ── MAIN WRAPPER ────────────────────────────── */
-        .register-wrapper {
-            display: flex;
-            flex: 1;
-            min-height: 100vh;
-            padding-top: 56px;
-        }
-
-        /* ── LEFT PANEL ──────────────────────────────── */
-        .register-left {
-            flex: 0 0 42%;
-            background: var(--navy);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
-            padding: 60px 50px;
-        }
-
-        /* Grey accent bar */
-        .register-left::before {
-            content: "";
-            position: absolute;
-            left: 0; top: 0; bottom: 0;
-            width: 5px;
-            background: linear-gradient(to bottom, var(--grey-light), var(--grey-dim));
-        }
-
-        /* Subtle grid texture */
-        .register-left::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background-image:
-                linear-gradient(rgba(138,148,166,0.04) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(138,148,166,0.04) 1px, transparent 1px);
-            background-size: 40px 40px;
-            pointer-events: none;
-        }
-
-        .left-glow {
-            position: absolute;
-            bottom: -120px; right: -120px;
-            width: 380px; height: 380px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(138,148,166,0.07) 0%, transparent 70%);
-            pointer-events: none;
-            z-index: 1;
-        }
-
-        .left-circle {
-            position: absolute;
-            top: -50px; left: 30px;
-            width: 200px; height: 200px;
-            border-radius: 50%;
-            border: 1px solid rgba(138,148,166,0.1);
-            pointer-events: none;
-            z-index: 1;
-        }
-
-        .left-content {
-            position: relative;
-            z-index: 2;
-            color: var(--text-bright);
-            max-width: 340px;
-        }
-
-        .quote-mark {
-            font-family: 'Syne', sans-serif;
-            font-size: 72px;
-            line-height: 0.6;
-            color: var(--grey);
-            font-weight: 800;
-            display: block;
-            margin-bottom: 24px;
-        }
-
-        .left-content h2 {
-            font-family: 'Syne', sans-serif;
-            font-size: 42px;
-            font-weight: 800;
-            line-height: 1.15;
-            color: var(--text-bright);
-        }
-
-        .left-content p {
-            margin-top: 18px;
-            font-size: 14px;
-            color: var(--text-mid);
-            line-height: 1.75;
-        }
-
-        .left-badge {
-            margin-top: 36px;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            background: var(--grey-glow);
-            border: 1px solid var(--grey-border);
-            border-radius: 50px;
-            padding: 9px 18px;
-            font-size: 13px;
-            color: var(--grey-light);
-            font-weight: 500;
-        }
-
-        /* ── RIGHT PANEL ─────────────────────────────── */
-        .register-right {
-            flex: 1;
-            background: var(--bg-dark);
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            padding: 40px 30px;
-            overflow-y: auto;
-        }
-
-        .register-card {
-            width: 100%;
-            max-width: 480px;
-        }
-
-        .card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 28px;
-        }
-
-        .card-header h2 {
-            font-family: 'Syne', sans-serif;
-            font-size: 24px;
-            font-weight: 800;
-            color: var(--text-bright);
-        }
-
-        .card-header a {
-            font-size: 13px;
-            color: var(--text-dim);
-            text-decoration: none;
-        }
-        .card-header a span { color: var(--grey-light); font-weight: 600; }
-
-        /* ── FORM GRID ───────────────────────────────── */
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        .form-group { display: flex; flex-direction: column; gap: 5px; }
-        .form-group.full { grid-column: span 2; }
-        .form-group.half { grid-column: span 1; }
-
-        .form-group label {
-            font-size: 10px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.7px;
-            color: var(--text-dim);
-        }
-
-        .form-group input {
-            padding: 11px 14px;
-            background: var(--bg-input);
-            border: 1.5px solid var(--border);
-            border-radius: 8px;
-            font-size: 14px;
-            color: var(--text-bright);
-            font-family: 'DM Sans', sans-serif;
-            outline: none;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-
-        .form-group input:focus {
-            border-color: var(--grey);
-            box-shadow: 0 0 0 3px rgba(138,148,166,0.1);
-            background: #131b2e;
-        }
-
-        .form-group input::placeholder { color: var(--text-dim); }
-
-        /* ── SECTION LABELS ──────────────────────────── */
-        .section-label {
-            font-size: 10px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.7px;
-            color: var(--text-dim);
-            margin: 16px 0 8px;
-        }
-
-        /* ── OPTION PILLS ────────────────────────────── */
-        .option-group { display: flex; gap: 8px; flex-wrap: wrap; }
-
-        .option {
-            padding: 7px 15px;
-            border-radius: 50px;
-            border: 1.5px solid var(--border);
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--text-mid);
-            cursor: pointer;
-            transition: all 0.18s;
-            user-select: none;
-            background: var(--bg-input);
-        }
-
-        .option:hover { border-color: var(--grey-dim); color: var(--grey-light); }
-        .option.active {
-            background: var(--grey-glow);
-            border-color: var(--grey);
-            color: var(--grey-light);
-        }
-
-        /* ── ROLE CARDS ──────────────────────────────── */
-        .role-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin: 8px 0 0;
-        }
-
-        .role-card {
-            padding: 13px 16px;
-            border-radius: 10px;
-            border: 1.5px solid var(--border);
-            background: var(--bg-input);
-            cursor: pointer;
-            transition: all 0.18s;
-            text-align: center;
-        }
-
-        .role-card h3 {
-            font-family: 'Syne', sans-serif;
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--text-dim);
-        }
-
-        .role-card:hover { border-color: var(--grey-dim); }
-        .role-card.active {
-            border-color: var(--grey);
-            background: var(--grey-glow);
-        }
-        .role-card.active h3 { color: var(--grey-light); }
-
-        /* ── ACTIONS ─────────────────────────────────── */
-        .form-actions { margin-top: 20px; }
-
-        .terms-row {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            font-size: 12px;
-            color: var(--text-dim);
-            margin-bottom: 16px;
-        }
-        .terms-row input[type="checkbox"] {
-            margin-top: 2px;
-            accent-color: var(--grey);
-            width: 14px; height: 14px;
-            cursor: pointer;
-            flex-shrink: 0;
-        }
-        .terms-row a { color: var(--grey-light); font-weight: 600; text-decoration: none; }
-
-        .btn-register {
-            width: 100%;
-            padding: 13px;
-            background: var(--grey);
-            color: var(--bg-dark);
-            border: none;
-            border-radius: 10px;
-            font-family: 'Syne', sans-serif;
-            font-size: 15px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: background 0.2s, transform 0.15s;
-            letter-spacing: 0.3px;
-        }
-        .btn-register:hover { background: var(--grey-light); transform: translateY(-1px); }
-        .btn-register:active { transform: translateY(0); }
-
-        .divider {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin: 14px 0;
-            font-size: 12px;
-            color: var(--text-dim);
-        }
-        .divider::before, .divider::after {
-            content: "";
-            flex: 1;
-            height: 1px;
-            background: var(--border);
-        }
-
-        .btn-google {
-            width: 100%;
-            padding: 11px;
-            background: var(--bg-input);
-            border: 1.5px solid var(--border);
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 500;
-            color: var(--text-mid);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            transition: border-color 0.2s, color 0.2s;
-            font-family: 'DM Sans', sans-serif;
-        }
-        .btn-google:hover { border-color: var(--grey-dim); color: var(--text-bright); }
-
-        .error-msg {
-            font-size: 12px;
-            color: #f87171;
-            min-height: 18px;
-            margin: 8px 0 0;
-        }
-
-        /* ── OTP OVERLAY ─────────────────────────────── */
-        #otpOverlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(5,8,16,0.94);
-            backdrop-filter: blur(16px);
-            z-index: 99999;
-            justify-content: center;
-            align-items: center;
-        }
-        #otpOverlay.show { display: flex; }
-
-        .otp-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 40px 36px;
-            width: 380px;
-            text-align: center;
-            box-shadow: 0 32px 80px rgba(0,0,0,0.7);
-        }
-        .otp-card h3 {
-            font-family: 'Syne', sans-serif;
-            font-size: 21px;
-            font-weight: 800;
-            color: var(--text-bright);
-            margin-bottom: 6px;
-        }
-        .otp-card > p {
-            color: var(--text-mid);
-            font-size: 13px;
-            margin-bottom: 24px;
-            line-height: 1.6;
-        }
-        .otp-card > p span { color: var(--grey-light); font-weight: 600; }
-
-        .otp-inputs { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
-        .otp-inputs input {
-            width: 50px; height: 58px;
-            text-align: center;
-            font-size: 24px; font-weight: 700;
-            background: var(--bg-input);
-            border: 2px solid var(--border);
-            border-radius: 12px;
-            color: var(--text-bright);
-            outline: none;
-            transition: border-color 0.2s;
-            font-family: 'Syne', sans-serif;
-        }
-        .otp-inputs input:focus { border-color: var(--grey); box-shadow: 0 0 0 3px rgba(138,148,166,0.12); }
-        .otp-inputs input.filled { border-color: var(--grey); background: var(--grey-glow); }
-
-        .verify-btn {
-            width: 100%; padding: 13px; border-radius: 10px; border: none;
-            background: var(--grey);
-            color: var(--bg-dark);
-            font-size: 15px; font-weight: 700;
-            font-family: 'Syne', sans-serif;
-            cursor: pointer; transition: all 0.2s; margin-bottom: 14px;
-        }
-        .verify-btn:hover { background: var(--grey-light); transform: translateY(-1px); }
-        .verify-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-
-        .resend-row { font-size: 13px; color: var(--text-dim); }
-        .resend-row a { color: var(--grey-light); cursor: pointer; font-weight: 600; }
-        #otpTimer { color: var(--grey); font-weight: 600; }
-        #otpMsg { font-size: 13px; min-height: 18px; margin-bottom: 12px; }
-        #otpMsg.success { color: #4ade80; }
-        #otpMsg.error   { color: #f87171; }
-
-        /* ── TOAST ───────────────────────────────────── */
-        #toast {
-            position: fixed;
-            bottom: 30px; left: 50%;
-            transform: translateX(-50%) translateY(20px);
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            color: var(--text-bright);
-            padding: 12px 24px;
-            border-radius: 50px;
-            font-size: 14px;
-            opacity: 0;
-            transition: all 0.3s;
-            z-index: 999999;
-            pointer-events: none;
-        }
-        #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-        #toast.error { background: #1e0a0a; border-color: rgba(248,113,113,0.4); color: #fca5a5; }
-
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: var(--bg-dark); }
-        ::-webkit-scrollbar-thumb { background: var(--grey-dim); border-radius: 3px; }
-    </style>
 </head>
+
 <body>
-
 <div id="toast"></div>
-
-<!-- OTP OVERLAY -->
-<div id="otpOverlay">
-    <div class="otp-card">
-        <h3>Verify Your Email</h3>
-        <p>We sent a 6-digit OTP to<br><span id="otpEmailDisplay"></span></p>
-        <div class="otp-inputs">
-            <input type="text" maxlength="1" id="o1" oninput="otpInput(this,null,'o2')" onkeydown="otpBack(event,this,null)">
-            <input type="text" maxlength="1" id="o2" oninput="otpInput(this,'o1','o3')" onkeydown="otpBack(event,this,'o1')">
-            <input type="text" maxlength="1" id="o3" oninput="otpInput(this,'o2','o4')" onkeydown="otpBack(event,this,'o2')">
-            <input type="text" maxlength="1" id="o4" oninput="otpInput(this,'o3','o5')" onkeydown="otpBack(event,this,'o3')">
-            <input type="text" maxlength="1" id="o5" oninput="otpInput(this,'o4','o6')" onkeydown="otpBack(event,this,'o4')">
-            <input type="text" maxlength="1" id="o6" oninput="otpInput(this,'o5',null)"  onkeydown="otpBack(event,this,'o5')">
-        </div>
-        <p id="otpMsg"></p>
-        <button class="verify-btn" id="verifyBtn" onclick="verifyOTP()">Verify & Register</button>
-        <div class="resend-row">
-            Didn't get it? <a onclick="resendOTP()" id="resendLink">Resend</a> <span id="otpTimer"></span>
-        </div>
-    </div>
-</div>
-
-<!-- TOPBAR -->
 <div class="topbar">
-    <img src="images/logo.png" class="logo-img" alt="Logo">
+    <img src="images/logo.png" class="logo-img">
     <div class="nav-links">
         <a href="index.html">Home</a>
-        <a href="login.html">Sign In</a>
-        <a href="#" class="active">Register</a>
+        <a href="login.html">Login</a>
+        <a href="#">Register</a>
     </div>
 </div>
+</div>
+<div class="main center-page">
 
-<!-- MAIN -->
-<div class="register-wrapper">
+    <div class="job-card-premium register-card">
+            <h2>Register</h2>
 
-    <!-- LEFT -->
-    <div class="register-left">
-        <div class="left-circle"></div>
-        <div class="left-glow"></div>
-        <div class="left-content">
-            <span class="quote-mark">"</span>
-            <h2>Let's Make<br>it Happen<br>Together!</h2>
-            <p>Join thousands of job seekers and recruiters<br>building careers every single day.</p>
-            <div class="left-badge">
-                🚀 &nbsp;50,000+ Active Listings
-            </div>
+      <div class="form-grid">
+   
+        <input type="text" id="firstName" placeholder="First Name" required>
+        <input type="text" id="lastName" placeholder="Last Name" required>
+        <input type="email" id="email" placeholder="Email" required>
+        <input type="password" id="password" minlength="6" placeholder="Password" required>
+        <input type="password" id="confirmPassword" required placeholder="Confirm Password">
+        <p id="error" style="color:red;"></p>
+        <div class="two-col">
+        <input type="tel" id="contact" placeholder="Contact Number" required>
+        <input type="text" id="city" placeholder="Current City" required>
         </div>
     </div>
 
-    <!-- RIGHT -->
-    <div class="register-right">
-        <div class="register-card">
+    <!-- Gender -->
+    <label>Gender</label>
+    <div class="option-group">
+        <div class="option" onclick="selectOption(this,'gender')" data-value="Male">Male</div>
+        <div class="option" onclick="selectOption(this,'gender')" data-value="Female">Female</div>
+        <div class="option" onclick="selectOption(this,'gender')" data-value="Other">Other</div>
+    </div>
 
-            <div class="card-header">
-                <h2>Create An Account</h2>
-                <a href="login.html">Have an account? <span>Sign In</span></a>
-            </div>
+    <!-- Type -->
+    <label>Type</label>
+    <div class="option-group">
+        <div class="option" onclick="selectOption(this,'type')" data-value="College Student">Student</div>
+        <div class="option" onclick="selectOption(this,'type')" data-value="Fresher">Fresher</div>
+        <div class="option" onclick="selectOption(this,'type')" data-value="Professional">Professional</div>
+        <div class="option" onclick="selectOption(this,'type')" data-value="School Student">School Student</div>
+    </div>
 
-            <div class="form-grid">
-                <div class="form-group half">
-                    <label>First Name</label>
-                    <input type="text" id="firstName" placeholder="John" required>
-                </div>
-                <div class="form-group half">
-                    <label>Last Name</label>
-                    <input type="text" id="lastName" placeholder="Doe" required>
-                </div>
-                <div class="form-group half">
-                    <label>Email</label>
-                    <input type="email" id="email" placeholder="john@email.com" required>
-                </div>
-                <div class="form-group half">
-                    <label>Contact Number</label>
-                    <input type="tel" id="contact" placeholder="+91 00000 00000" required>
-                </div>
-                <div class="form-group half">
-                    <label>Password</label>
-                    <input type="password" id="password" placeholder="Min. 6 characters" required>
-                </div>
-                <div class="form-group half">
-                    <label>Confirm Password</label>
-                    <input type="password" id="confirmPassword" placeholder="Re-enter password" required>
-                </div>
-                <div class="form-group full">
-                    <label>Current City</label>
-                    <input type="text" id="city" placeholder="e.g. Mumbai" required>
-                </div>
-            </div>
-
-            <p class="section-label">Gender</p>
-            <div class="option-group">
-                <div class="option" onclick="selectOption(this,'gender')" data-value="Male">Male</div>
-                <div class="option" onclick="selectOption(this,'gender')" data-value="Female">Female</div>
-                <div class="option" onclick="selectOption(this,'gender')" data-value="Other">Other</div>
-            </div>
-
-            <p class="section-label">I am a</p>
-            <div class="option-group">
-                <div class="option" onclick="selectOption(this,'type')" data-value="College Student">Student</div>
-                <div class="option" onclick="selectOption(this,'type')" data-value="Fresher">Fresher</div>
-                <div class="option" onclick="selectOption(this,'type')" data-value="Professional">Professional</div>
-                <div class="option" onclick="selectOption(this,'type')" data-value="School Student">School Student</div>
-            </div>
-
-            <p class="section-label">Register as</p>
+            <!-- 🔥 ROLE SELECTION -->
             <div class="role-container">
                 <div class="role-card active" onclick="selectRole('user')" id="userCard">
-                    <h3>🎯 Job Applicant</h3>
+                    
+                    <h3>Job Applicant</h3>
                 </div>
+
                 <div class="role-card" onclick="selectRole('employer')" id="employerCard">
-                    <h3>🏢 Recruiter</h3>
+                    
+                    <h3>Recruiter</h3>
                 </div>
             </div>
 
-            <p id="error" class="error-msg"></p>
+            <button onclick="register()">Register</button>
 
-            <div class="form-actions">
-                <div class="terms-row">
-                    <input type="checkbox" id="terms">
-                    <label for="terms">I agree to the <a href="#">Terms & Conditions</a> and <a href="#">Privacy Policy</a></label>
-                </div>
-                <button class="btn-register" onclick="register()">Create Account</button>
-                
-
+            <p>Already have an account? <a href="login.html">Login</a></p>
         </div>
     </div>
 
-</div>
-
-<script>
-let selectedData = { gender: "", type: "" };
-let selectedRole = "user";
-let pendingEmail = "";
-let otpTimerInterval = null;
+    <!-- ✅ SCRIPT -->
+    <script>
+        let selectedData = {
+    gender: "",
+    type: ""
+};
 
 function selectOption(element, category) {
-    for (let opt of element.parentElement.children) opt.classList.remove("active");
+    let options = element.parentElement.children;
+
+    for (let opt of options) {
+        opt.classList.remove("active");
+    }
+
     element.classList.add("active");
     selectedData[category] = element.getAttribute("data-value");
 }
+    let selectedRole = "user"; // default
 
-function selectRole(role) {
-    selectedRole = role;
-    document.getElementById("userCard").classList.remove("active");
-    document.getElementById("employerCard").classList.remove("active");
-    document.getElementById(role + "Card").classList.add("active");
-}
+    function selectRole(role) {
+        selectedRole = role;
 
-function register() {
-    const error = document.getElementById("error");
-    const firstName       = document.getElementById("firstName").value.trim();
-    const lastName        = document.getElementById("lastName").value.trim();
-    const email           = document.getElementById("email").value.trim();
-    const password        = document.getElementById("password").value.trim();
-    const confirmPassword = document.getElementById("confirmPassword").value.trim();
-    const contact         = document.getElementById("contact").value.trim();
-    const city            = document.getElementById("city").value.trim();
-    const terms           = document.getElementById("terms").checked;
+        document.getElementById("userCard").classList.remove("active");
+        document.getElementById("employerCard").classList.remove("active");
 
-    if (!firstName || !lastName || !email || !password || !confirmPassword || !contact || !city) {
-        error.innerText = "All fields are required"; return;
+        document.getElementById(role + "Card").classList.add("active");
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { error.innerText = "Enter valid email format"; return; }
-    if (password !== confirmPassword) { error.innerText = "Passwords do not match"; return; }
-    if (password.length < 6) { error.innerText = "Password must be at least 6 characters"; return; }
-    if (!selectedData.gender) { error.innerText = "Please select gender"; return; }
-    if (!selectedData.type)   { error.innerText = "Please select your type"; return; }
-    if (!selectedRole)        { error.innerText = "Please select a role"; return; }
-    if (!terms)               { error.innerText = "Please accept the Terms & Conditions"; return; }
+
+    function register() {
+    let error = document.getElementById("error");
+
+    let firstName = document.getElementById("firstName").value.trim();
+    let lastName = document.getElementById("lastName").value.trim();
+    let email = document.getElementById("email").value.trim();
+    let password = document.getElementById("password").value.trim();
+    let confirmPassword = document.getElementById("confirmPassword").value.trim();
+    let contact = document.getElementById("contact").value.trim();
+    let city = document.getElementById("city").value.trim();
+
+    // 🔥 REQUIRED FIELD CHECK
+    if (!firstName || !lastName || !email || !password || !confirmPassword || !contact || !city) {
+        error.innerText = "All fields are required ❌";
+        return;
+    }
+
+    // 🔥 EMAIL FORMAT CHECK
+    let emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(email)) {
+        error.innerText = "Enter valid email format ❌";
+        return;
+    }
+
+    // 🔥 PASSWORD MATCH
+    if (password !== confirmPassword) {
+        error.innerText = "Passwords do not match ❌";
+        return;
+    }
+    if (!selectedData.gender) {
+    error.innerText = "Please select gender ❌";
+    return;
+}
+if (password.length < 6) {
+    error.innerText = "Password must be at least 6 characters ❌";
+    return;
+}
+if (!selectedData.type) {
+    error.innerText = "Please select type ❌";
+    return;
+}
+if (!selectedRole) {
+    error.innerText = "Please select role ❌";
+    return;
+}
     error.innerText = "";
 
-    fetch("https://hirex-backend-sio8.onrender.com/register-otp", {
+    let user = {
+        firstName,
+        lastName,
+        email,
+        password,
+        contact,
+        city,
+        gender: selectedData.gender,
+        type: selectedData.type,
+        role: selectedRole
+    };
+
+    fetch("https://hirex-backend-sio8.onrender.com/register", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ firstName, lastName, email, password, contact, city, gender: selectedData.gender, type: selectedData.type, role: selectedRole })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.message && data.message.includes("sent")) {
-            pendingEmail = email;
-            showOtpOverlay(email);
-        } else {
-            showToast(data.message || "Failed to send OTP", "error");
-        }
-    })
-    .catch(() => { error.innerText = "Error connecting to server"; });
-}
-
-function showOtpOverlay(email) {
-    document.getElementById("otpEmailDisplay").innerText = email;
-    document.getElementById("otpOverlay").classList.add("show");
-    document.getElementById("otpMsg").innerText = "";
-    document.getElementById("o1").focus();
-    startOtpTimer(600);
-}
-
-function otpInput(el, prevId, nextId) {
-    el.value = el.value.replace(/\D/, "");
-    if (el.value) { el.classList.add("filled"); if (nextId) document.getElementById(nextId).focus(); }
-    else el.classList.remove("filled");
-}
-
-function otpBack(e, el, prevId) {
-    if (e.key === "Backspace" && !el.value && prevId) document.getElementById(prevId).focus();
-}
-
-function getOtpValue() {
-    return ["o1","o2","o3","o4","o5","o6"].map(id => document.getElementById(id).value).join("");
-}
-
-function verifyOTP() {
-    const otp = getOtpValue();
-    const msg = document.getElementById("otpMsg");
-    const btn = document.getElementById("verifyBtn");
-    if (otp.length < 6) { msg.className = "error"; msg.innerText = "Please enter all 6 digits"; return; }
-    btn.disabled = true; btn.innerText = "Verifying...";
-
-    fetch("https://hirex-backend-sio8.onrender.com/verify-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: pendingEmail, otp })
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(user)
     })
     .then(res => res.json())
     .then(data => {
         if (data.message && data.message.toLowerCase().includes("success")) {
-            msg.className = "success"; msg.innerText = "Verified! Redirecting to login...";
-            clearInterval(otpTimerInterval);
-            setTimeout(() => window.location.href = "login.html", 1200);
-        } else {
-            msg.className = "error"; msg.innerText = data.message || "Invalid OTP";
-            btn.disabled = false; btn.innerText = "Verify & Register";
+            showToast("Registered successfully ✅");
+
+        setTimeout(() => {
+            window.location.href = "login.html";
+        }, 1500);
+            return;
         }
+         showToast(data.message || "Registration failed ❌", "error");
     })
-    .catch(() => { msg.className = "error"; msg.innerText = "Server error"; btn.disabled = false; btn.innerText = "Verify & Register"; });
+    .catch(err => {
+        console.log(err);
+        error.innerText = "Error connecting to server ❌";
+    });
 }
-
-function resendOTP() {
-    const link = document.getElementById("resendLink");
-    link.style.pointerEvents = "none"; link.style.opacity = "0.5";
-
-    fetch("https://hirex-backend-sio8.onrender.com/resend-otp", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: pendingEmail })
-    })
-    .then(res => res.json())
-    .then(data => {
-        const msg = document.getElementById("otpMsg");
-        if (data.message.includes("✅")) {
-            msg.className = "success"; msg.innerText = "New OTP sent!";
-            ["o1","o2","o3","o4","o5","o6"].forEach(id => { const el = document.getElementById(id); el.value = ""; el.classList.remove("filled"); });
-            document.getElementById("o1").focus();
-            startOtpTimer(600);
-        } else { msg.className = "error"; msg.innerText = data.message; }
-        link.style.pointerEvents = "auto"; link.style.opacity = "1";
-    })
-    .catch(() => { link.style.pointerEvents = "auto"; link.style.opacity = "1"; });
-}
-
-function startOtpTimer(seconds) {
-    clearInterval(otpTimerInterval);
-    let remaining = seconds;
-    const timerEl = document.getElementById("otpTimer");
-    otpTimerInterval = setInterval(() => {
-        remaining--;
-        const m = Math.floor(remaining / 60), s = remaining % 60;
-        timerEl.innerText = `(${m}:${s.toString().padStart(2,"0")})`;
-        if (remaining <= 0) { clearInterval(otpTimerInterval); timerEl.innerText = "(expired)"; }
-    }, 1000);
-}
-
 function showToast(message, type = "success") {
     const toast = document.getElementById("toast");
-    if (!toast) return;
+
+    if (!toast) {
+        console.error("Toast element not found");
+        return;
+    }
+
     toast.innerText = message;
-    toast.classList.remove("error", "show");
-    void toast.offsetWidth;
+
+    // reset classes
+    toast.classList.remove("error");
     toast.classList.add("show");
-    if (type === "error") toast.classList.add("error");
-    setTimeout(() => toast.classList.remove("show", "error"), 3000);
+
+    if (type === "error") {
+        toast.classList.add("error");
+    }
+
+    setTimeout(() => {
+        toast.classList.remove("show", "error");
+    }, 3000);
 }
+    </script>
+    <script>
+document.getElementById("profilePic").addEventListener("change", function() {
+    let fileName = this.files[0] ? this.files[0].name : "No file selected";
+    document.getElementById("fileName").innerText = fileName;
+});
+
 </script>
 </body>
 </html>
