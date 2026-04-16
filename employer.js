@@ -95,30 +95,30 @@ function goToApplicant(jobId, appId) {
     localStorage.setItem("highlightApplicantId", appId);
     showSection("applicants");
 }
-window.onpopstate = function () {
+
+window.addEventListener("popstate", function () {
+
+    console.log("BACK PRESSED"); // debug
 
     if (currentSection !== "dashboard") {
         showSection("dashboard", false);
 
-        // keep user inside app
-        history.pushState({ section: "dashboard" }, "", "");
+        // push again so user stays inside app
+        history.pushState({ page: "dashboard" }, "", "");
     }
 
     else {
         let confirmLogout = confirm("Are you sure you want to logout?");
 
         if (confirmLogout) {
-            localStorage.removeItem("loggedInUser");
-
-            // 🔥 EMPLOYER goes to login
-            window.location.href = "login.html";
+            localStorage.clear();
+            window.location.href = "employee.html";
         } else {
-            // stay on dashboard
-            history.pushState({ section: "dashboard" }, "", "");
+            // keep user on page
+            history.pushState({ page: "dashboard" }, "", "");
         }
     }
-};
-
+});
 // 🔥 Load last count from storage
 let lastAppCount = Number(localStorage.getItem("lastAppCount")) || 0;
 
