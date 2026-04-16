@@ -6,10 +6,81 @@
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        #otpOverlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(8,12,20,0.93);
+            backdrop-filter: blur(12px);
+            z-index: 99999;
+            justify-content: center;
+            align-items: center;
+        }
+        #otpOverlay.show { display: flex; }
+        .otp-card {
+            background: #111827;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 18px;
+            padding: 36px 32px;
+            width: 360px;
+            text-align: center;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+        }
+        .otp-card h3 { font-size: 20px; color: #f0eeff; margin-bottom: 6px; }
+        .otp-card > p { color: #7c7a9a; font-size: 13px; margin-bottom: 24px; }
+        .otp-card > p span { color: #a78bfa; font-weight: 600; }
+        .otp-inputs { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
+        .otp-inputs input {
+            width: 48px; height: 56px; text-align: center;
+            font-size: 22px; font-weight: 700;
+            background: #0f1520;
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 10px; color: #f0eeff;
+            outline: none; transition: border-color 0.2s; padding: 0;
+        }
+        .otp-inputs input:focus { border-color: #6c63ff; box-shadow: 0 0 0 3px rgba(108,99,255,0.2); }
+        .otp-inputs input.filled { border-color: #22d3a5; }
+        .verify-btn {
+            width: 100%; padding: 13px; border-radius: 10px; border: none;
+            background: linear-gradient(135deg, #6c63ff, #22d3a5);
+            color: white; font-size: 15px; font-weight: 600;
+            cursor: pointer; transition: all 0.2s; margin-bottom: 14px;
+        }
+        .verify-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .verify-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .resend-row { font-size: 13px; color: #7c7a9a; }
+        .resend-row a { color: #a78bfa; cursor: pointer; text-decoration: underline; }
+        #otpTimer { color: #f97316; font-weight: 600; }
+        #otpMsg { font-size: 13px; min-height: 18px; margin-bottom: 12px; }
+        #otpMsg.success { color: #22d3a5; }
+        #otpMsg.error   { color: #f87171; }
+    </style>
 </head>
-
 <body>
 <div id="toast"></div>
+
+<!-- OTP OVERLAY -->
+<div id="otpOverlay">
+    <div class="otp-card">
+        <h3>Verify Your Email</h3>
+        <p>We sent a 6-digit OTP to<br><span id="otpEmailDisplay"></span></p>
+        <div class="otp-inputs">
+            <input type="text" maxlength="1" id="o1" oninput="otpInput(this,null,'o2')" onkeydown="otpBack(event,this,null)">
+            <input type="text" maxlength="1" id="o2" oninput="otpInput(this,'o1','o3')" onkeydown="otpBack(event,this,'o1')">
+            <input type="text" maxlength="1" id="o3" oninput="otpInput(this,'o2','o4')" onkeydown="otpBack(event,this,'o2')">
+            <input type="text" maxlength="1" id="o4" oninput="otpInput(this,'o3','o5')" onkeydown="otpBack(event,this,'o3')">
+            <input type="text" maxlength="1" id="o5" oninput="otpInput(this,'o4','o6')" onkeydown="otpBack(event,this,'o4')">
+            <input type="text" maxlength="1" id="o6" oninput="otpInput(this,'o5',null)"  onkeydown="otpBack(event,this,'o5')">
+        </div>
+        <p id="otpMsg"></p>
+        <button class="verify-btn" id="verifyBtn" onclick="verifyOTP()">Verify & Register</button>
+        <div class="resend-row">
+            Didn't get it? <a onclick="resendOTP()" id="resendLink">Resend</a> <span id="otpTimer"></span>
+        </div>
+    </div>
+</div>
+
 <div class="topbar">
     <img src="images/logo.png" class="logo-img">
     <div class="nav-links">
@@ -18,202 +89,191 @@
         <a href="#">Register</a>
     </div>
 </div>
-</div>
+
 <div class="main center-page">
-
     <div class="job-card-premium register-card">
-            <h2>Register</h2>
-
-      <div class="form-grid">
-   
-        <input type="text" id="firstName" placeholder="First Name" required>
-        <input type="text" id="lastName" placeholder="Last Name" required>
-        <input type="email" id="email" placeholder="Email" required>
-        <input type="password" id="password" minlength="6" placeholder="Password" required>
-        <input type="password" id="confirmPassword" required placeholder="Confirm Password">
-        <p id="error" style="color:red;"></p>
-        <div class="two-col">
-        <input type="tel" id="contact" placeholder="Contact Number" required>
-        <input type="text" id="city" placeholder="Current City" required>
-        </div>
-    </div>
-
-    <!-- Gender -->
-    <label>Gender</label>
-    <div class="option-group">
-        <div class="option" onclick="selectOption(this,'gender')" data-value="Male">Male</div>
-        <div class="option" onclick="selectOption(this,'gender')" data-value="Female">Female</div>
-        <div class="option" onclick="selectOption(this,'gender')" data-value="Other">Other</div>
-    </div>
-
-    <!-- Type -->
-    <label>Type</label>
-    <div class="option-group">
-        <div class="option" onclick="selectOption(this,'type')" data-value="College Student">Student</div>
-        <div class="option" onclick="selectOption(this,'type')" data-value="Fresher">Fresher</div>
-        <div class="option" onclick="selectOption(this,'type')" data-value="Professional">Professional</div>
-        <div class="option" onclick="selectOption(this,'type')" data-value="School Student">School Student</div>
-    </div>
-
-            <!-- 🔥 ROLE SELECTION -->
-            <div class="role-container">
-                <div class="role-card active" onclick="selectRole('user')" id="userCard">
-                    
-                    <h3>Job Applicant</h3>
-                </div>
-
-                <div class="role-card" onclick="selectRole('employer')" id="employerCard">
-                    
-                    <h3>Recruiter</h3>
-                </div>
+        <h2>Register</h2>
+        <div class="form-grid">
+            <input type="text" id="firstName" placeholder="First Name" required>
+            <input type="text" id="lastName" placeholder="Last Name" required>
+            <input type="email" id="email" placeholder="Email" required>
+            <input type="password" id="password" minlength="6" placeholder="Password" required>
+            <input type="password" id="confirmPassword" required placeholder="Confirm Password">
+            <p id="error" style="color:red;"></p>
+            <div class="two-col">
+                <input type="tel" id="contact" placeholder="Contact Number" required>
+                <input type="text" id="city" placeholder="Current City" required>
             </div>
-
-            <button onclick="register()">Register</button>
-
-            <p>Already have an account? <a href="login.html">Login</a></p>
         </div>
+        <label>Gender</label>
+        <div class="option-group">
+            <div class="option" onclick="selectOption(this,'gender')" data-value="Male">Male</div>
+            <div class="option" onclick="selectOption(this,'gender')" data-value="Female">Female</div>
+            <div class="option" onclick="selectOption(this,'gender')" data-value="Other">Other</div>
+        </div>
+        <label>Type</label>
+        <div class="option-group">
+            <div class="option" onclick="selectOption(this,'type')" data-value="College Student">Student</div>
+            <div class="option" onclick="selectOption(this,'type')" data-value="Fresher">Fresher</div>
+            <div class="option" onclick="selectOption(this,'type')" data-value="Professional">Professional</div>
+            <div class="option" onclick="selectOption(this,'type')" data-value="School Student">School Student</div>
+        </div>
+        <div class="role-container">
+            <div class="role-card active" onclick="selectRole('user')" id="userCard"><h3>Job Applicant</h3></div>
+            <div class="role-card" onclick="selectRole('employer')" id="employerCard"><h3>Recruiter</h3></div>
+        </div>
+        <button onclick="register()">Register</button>
+        <p>Already have an account? <a href="login.html">Login</a></p>
     </div>
+</div>
 
-    <!-- ✅ SCRIPT -->
-    <script>
-        let selectedData = {
-    gender: "",
-    type: ""
-};
+<script>
+let selectedData = { gender: "", type: "" };
+let selectedRole = "user";
+let pendingEmail = "";
+let otpTimerInterval = null;
 
 function selectOption(element, category) {
-    let options = element.parentElement.children;
-
-    for (let opt of options) {
-        opt.classList.remove("active");
-    }
-
+    for (let opt of element.parentElement.children) opt.classList.remove("active");
     element.classList.add("active");
     selectedData[category] = element.getAttribute("data-value");
 }
-    let selectedRole = "user"; // default
+function selectRole(role) {
+    selectedRole = role;
+    document.getElementById("userCard").classList.remove("active");
+    document.getElementById("employerCard").classList.remove("active");
+    document.getElementById(role + "Card").classList.add("active");
+}
 
-    function selectRole(role) {
-        selectedRole = role;
-
-        document.getElementById("userCard").classList.remove("active");
-        document.getElementById("employerCard").classList.remove("active");
-
-        document.getElementById(role + "Card").classList.add("active");
-    }
-
-    function register() {
+function register() {
     let error = document.getElementById("error");
-
-    let firstName = document.getElementById("firstName").value.trim();
-    let lastName = document.getElementById("lastName").value.trim();
-    let email = document.getElementById("email").value.trim();
-    let password = document.getElementById("password").value.trim();
+    let firstName       = document.getElementById("firstName").value.trim();
+    let lastName        = document.getElementById("lastName").value.trim();
+    let email           = document.getElementById("email").value.trim();
+    let password        = document.getElementById("password").value.trim();
     let confirmPassword = document.getElementById("confirmPassword").value.trim();
-    let contact = document.getElementById("contact").value.trim();
-    let city = document.getElementById("city").value.trim();
+    let contact         = document.getElementById("contact").value.trim();
+    let city            = document.getElementById("city").value.trim();
 
-    // 🔥 REQUIRED FIELD CHECK
     if (!firstName || !lastName || !email || !password || !confirmPassword || !contact || !city) {
-        error.innerText = "All fields are required ❌";
-        return;
+        error.innerText = "All fields are required"; return;
     }
-
-    // 🔥 EMAIL FORMAT CHECK
-    let emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailPattern.test(email)) {
-        error.innerText = "Enter valid email format ❌";
-        return;
-    }
-
-    // 🔥 PASSWORD MATCH
-    if (password !== confirmPassword) {
-        error.innerText = "Passwords do not match ❌";
-        return;
-    }
-    if (!selectedData.gender) {
-    error.innerText = "Please select gender ❌";
-    return;
-}
-if (password.length < 6) {
-    error.innerText = "Password must be at least 6 characters ❌";
-    return;
-}
-if (!selectedData.type) {
-    error.innerText = "Please select type ❌";
-    return;
-}
-if (!selectedRole) {
-    error.innerText = "Please select role ❌";
-    return;
-}
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { error.innerText = "Enter valid email format"; return; }
+    if (password !== confirmPassword) { error.innerText = "Passwords do not match"; return; }
+    if (password.length < 6) { error.innerText = "Password must be at least 6 characters"; return; }
+    if (!selectedData.gender) { error.innerText = "Please select gender"; return; }
+    if (!selectedData.type)   { error.innerText = "Please select type"; return; }
+    if (!selectedRole)        { error.innerText = "Please select role"; return; }
     error.innerText = "";
 
-    let user = {
-        firstName,
-        lastName,
-        email,
-        password,
-        contact,
-        city,
-        gender: selectedData.gender,
-        type: selectedData.type,
-        role: selectedRole
-    };
-
-    fetch("https://hirex-backend-sio8.onrender.com/register", {
+    fetch("https://hirex-backend-sio8.onrender.com/register-otp", {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(user)
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            firstName, lastName, email, password, contact, city,
+            gender: selectedData.gender, type: selectedData.type, role: selectedRole
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.message && data.message.includes("sent")) {
+            pendingEmail = email;
+            showOtpOverlay(email);
+        } else {
+            showToast(data.message || "Failed to send OTP", "error");
+        }
+    })
+    .catch(() => { error.innerText = "Error connecting to server"; });
+}
+
+function showOtpOverlay(email) {
+    document.getElementById("otpEmailDisplay").innerText = email;
+    document.getElementById("otpOverlay").classList.add("show");
+    document.getElementById("otpMsg").innerText = "";
+    document.getElementById("o1").focus();
+    startOtpTimer(600);
+}
+
+function otpInput(el, prevId, nextId) {
+    el.value = el.value.replace(/\D/, "");
+    if (el.value) { el.classList.add("filled"); if (nextId) document.getElementById(nextId).focus(); }
+    else el.classList.remove("filled");
+}
+function otpBack(e, el, prevId) {
+    if (e.key === "Backspace" && !el.value && prevId) document.getElementById(prevId).focus();
+}
+function getOtpValue() {
+    return ["o1","o2","o3","o4","o5","o6"].map(id => document.getElementById(id).value).join("");
+}
+
+function verifyOTP() {
+    let otp = getOtpValue();
+    let msg = document.getElementById("otpMsg");
+    let btn = document.getElementById("verifyBtn");
+    if (otp.length < 6) { msg.className = "error"; msg.innerText = "Please enter all 6 digits"; return; }
+    btn.disabled = true; btn.innerText = "Verifying...";
+
+    fetch("https://hirex-backend-sio8.onrender.com/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: pendingEmail, otp })
     })
     .then(res => res.json())
     .then(data => {
         if (data.message && data.message.toLowerCase().includes("success")) {
-            showToast("Registered successfully ✅");
-
-        setTimeout(() => {
-            window.location.href = "login.html";
-        }, 1500);
-            return;
+            msg.className = "success"; msg.innerText = "Verified! Redirecting to login...";
+            clearInterval(otpTimerInterval);
+            setTimeout(() => window.location.href = "login.html", 1200);
+        } else {
+            msg.className = "error"; msg.innerText = data.message || "Invalid OTP";
+            btn.disabled = false; btn.innerText = "Verify & Register";
         }
-         showToast(data.message || "Registration failed ❌", "error");
     })
-    .catch(err => {
-        console.log(err);
-        error.innerText = "Error connecting to server ❌";
-    });
+    .catch(() => { msg.className = "error"; msg.innerText = "Server error"; btn.disabled = false; btn.innerText = "Verify & Register"; });
 }
+
+function resendOTP() {
+    let link = document.getElementById("resendLink");
+    link.style.pointerEvents = "none"; link.style.opacity = "0.5";
+
+    fetch("https://hirex-backend-sio8.onrender.com/resend-otp", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: pendingEmail })
+    })
+    .then(res => res.json())
+    .then(data => {
+        let msg = document.getElementById("otpMsg");
+        if (data.message.includes("✅")) {
+            msg.className = "success"; msg.innerText = "New OTP sent!";
+            ["o1","o2","o3","o4","o5","o6"].forEach(id => { let el = document.getElementById(id); el.value = ""; el.classList.remove("filled"); });
+            document.getElementById("o1").focus();
+            startOtpTimer(600);
+        } else { msg.className = "error"; msg.innerText = data.message; }
+        link.style.pointerEvents = "auto"; link.style.opacity = "1";
+    })
+    .catch(() => { link.style.pointerEvents = "auto"; link.style.opacity = "1"; });
+}
+
+function startOtpTimer(seconds) {
+    clearInterval(otpTimerInterval);
+    let remaining = seconds;
+    let timerEl = document.getElementById("otpTimer");
+    otpTimerInterval = setInterval(() => {
+        remaining--;
+        let m = Math.floor(remaining / 60), s = remaining % 60;
+        timerEl.innerText = `(${m}:${s.toString().padStart(2,"0")})`;
+        if (remaining <= 0) { clearInterval(otpTimerInterval); timerEl.innerText = "(expired)"; }
+    }, 1000);
+}
+
 function showToast(message, type = "success") {
     const toast = document.getElementById("toast");
-
-    if (!toast) {
-        console.error("Toast element not found");
-        return;
-    }
-
+    if (!toast) return;
     toast.innerText = message;
-
-    // reset classes
-    toast.classList.remove("error");
-    toast.classList.add("show");
-
-    if (type === "error") {
-        toast.classList.add("error");
-    }
-
-    setTimeout(() => {
-        toast.classList.remove("show", "error");
-    }, 3000);
+    toast.classList.remove("error"); toast.classList.add("show");
+    if (type === "error") toast.classList.add("error");
+    setTimeout(() => toast.classList.remove("show", "error"), 3000);
 }
-    </script>
-    <script>
-document.getElementById("profilePic").addEventListener("change", function() {
-    let fileName = this.files[0] ? this.files[0].name : "No file selected";
-    document.getElementById("fileName").innerText = fileName;
-});
-
 </script>
 </body>
 </html>
