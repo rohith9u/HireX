@@ -310,7 +310,7 @@ function loadProfile() {
         // ✅ Default image fallback
         let imgSrc = user.profileImage
             ? `https://hirex-backend-sio8.onrender.com/images/${user.profileImage}`
-            :  "images/default-user.png";
+            :  "images/profile.png";
 
         // ✅ Render UI safely
         container.innerHTML = `
