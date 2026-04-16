@@ -9,25 +9,34 @@
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
-            --navy: #2b2f6b;
-            --yellow: #f5c518;
-            --yellow-dark: #e0b000;
-            --white: #ffffff;
-            --light-gray: #f4f5fa;
-            --border: #dde0ef;
-            --text-dark: #1a1d42;
-            --text-muted: #7a7fa8;
-            --input-bg: #f7f8fc;
+            --bg-dark:      #080c14;
+            --bg-panel:     #0d1120;
+            --bg-card:      #111827;
+            --bg-input:     #0f1520;
+
+            --navy:         #2b2f6b;
+
+            --grey:         #8a94a6;
+            --grey-light:   #b0bac8;
+            --grey-dim:     #556070;
+            --grey-glow:    rgba(138,148,166,0.13);
+            --grey-border:  rgba(138,148,166,0.22);
+
+            --text-bright:  #e8ecf4;
+            --text-mid:     #9aa3b5;
+            --text-dim:     #5a6478;
+            --border:       rgba(255,255,255,0.08);
         }
 
         html, body { height: 100%; }
 
         body {
             font-family: 'DM Sans', sans-serif;
-            background: var(--light-gray);
+            background: var(--bg-dark);
             display: flex;
             flex-direction: column;
             min-height: 100vh;
+            color: var(--text-bright);
         }
 
         /* ── TOPBAR ─────────────────────────────────── */
@@ -40,25 +49,27 @@
             justify-content: space-between;
             padding: 0 40px;
             height: 56px;
-            background: rgba(43,47,107,0.97);
-            backdrop-filter: blur(8px);
+            background: rgba(8,12,20,0.97);
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(12px);
         }
-        .logo-text {
-            font-family: 'Syne', sans-serif;
-            font-weight: 800;
-            font-size: 22px;
-            color: var(--yellow);
-            letter-spacing: -0.5px;
+
+        .logo-img {
+            height: 34px;
+            width: auto;
+            object-fit: contain;
         }
+
         .nav-links { display: flex; gap: 28px; }
         .nav-links a {
-            color: rgba(255,255,255,0.7);
+            color: var(--text-mid);
             text-decoration: none;
             font-size: 14px;
             font-weight: 500;
             transition: color 0.2s;
         }
-        .nav-links a:hover, .nav-links a.active { color: var(--yellow); }
+        .nav-links a:hover { color: var(--grey-light); }
+        .nav-links a.active { color: var(--text-bright); font-weight: 600; }
 
         /* ── MAIN WRAPPER ────────────────────────────── */
         .register-wrapper {
@@ -80,45 +91,59 @@
             padding: 60px 50px;
         }
 
-        /* Yellow accent bar */
+        /* Grey accent bar */
         .register-left::before {
             content: "";
             position: absolute;
             left: 0; top: 0; bottom: 0;
-            width: 10px;
-            background: var(--yellow);
+            width: 5px;
+            background: linear-gradient(to bottom, var(--grey-light), var(--grey-dim));
         }
 
-        /* Decorative circles */
+        /* Subtle grid texture */
         .register-left::after {
             content: "";
             position: absolute;
-            bottom: -80px; right: -80px;
-            width: 280px; height: 280px;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(138,148,166,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(138,148,166,0.04) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+        }
+
+        .left-glow {
+            position: absolute;
+            bottom: -120px; right: -120px;
+            width: 380px; height: 380px;
             border-radius: 50%;
-            border: 40px solid rgba(245,197,24,0.12);
+            background: radial-gradient(circle, rgba(138,148,166,0.07) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 1;
         }
 
         .left-circle {
             position: absolute;
-            top: -60px; left: 40px;
-            width: 180px; height: 180px;
+            top: -50px; left: 30px;
+            width: 200px; height: 200px;
             border-radius: 50%;
-            border: 30px solid rgba(245,197,24,0.08);
+            border: 1px solid rgba(138,148,166,0.1);
+            pointer-events: none;
+            z-index: 1;
         }
 
         .left-content {
             position: relative;
             z-index: 2;
-            color: var(--white);
-            max-width: 360px;
+            color: var(--text-bright);
+            max-width: 340px;
         }
 
         .quote-mark {
             font-family: 'Syne', sans-serif;
-            font-size: 80px;
+            font-size: 72px;
             line-height: 0.6;
-            color: var(--yellow);
+            color: var(--grey);
             font-weight: 800;
             display: block;
             margin-bottom: 24px;
@@ -126,38 +151,37 @@
 
         .left-content h2 {
             font-family: 'Syne', sans-serif;
-            font-size: 44px;
+            font-size: 42px;
             font-weight: 800;
             line-height: 1.15;
-            color: var(--white);
+            color: var(--text-bright);
         }
 
         .left-content p {
-            margin-top: 20px;
-            font-size: 15px;
-            color: rgba(255,255,255,0.55);
-            line-height: 1.7;
+            margin-top: 18px;
+            font-size: 14px;
+            color: var(--text-mid);
+            line-height: 1.75;
         }
 
         .left-badge {
-            margin-top: 40px;
+            margin-top: 36px;
             display: inline-flex;
             align-items: center;
             gap: 10px;
-            background: rgba(245,197,24,0.12);
-            border: 1px solid rgba(245,197,24,0.25);
+            background: var(--grey-glow);
+            border: 1px solid var(--grey-border);
             border-radius: 50px;
-            padding: 10px 20px;
+            padding: 9px 18px;
             font-size: 13px;
-            color: var(--yellow);
+            color: var(--grey-light);
             font-weight: 500;
         }
-        .left-badge span { font-size: 18px; }
 
         /* ── RIGHT PANEL ─────────────────────────────── */
         .register-right {
             flex: 1;
-            background: var(--white);
+            background: var(--bg-dark);
             display: flex;
             justify-content: center;
             align-items: flex-start;
@@ -179,17 +203,17 @@
 
         .card-header h2 {
             font-family: 'Syne', sans-serif;
-            font-size: 26px;
+            font-size: 24px;
             font-weight: 800;
-            color: var(--text-dark);
+            color: var(--text-bright);
         }
 
         .card-header a {
             font-size: 13px;
-            color: var(--text-muted);
+            color: var(--text-dim);
             text-decoration: none;
         }
-        .card-header a span { color: var(--navy); font-weight: 600; }
+        .card-header a span { color: var(--grey-light); font-weight: 600; }
 
         /* ── FORM GRID ───────────────────────────────── */
         .form-grid {
@@ -198,78 +222,69 @@
             gap: 12px;
         }
 
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
         .form-group.full { grid-column: span 2; }
         .form-group.half { grid-column: span 1; }
 
         .form-group label {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.6px;
-            color: var(--text-muted);
+            letter-spacing: 0.7px;
+            color: var(--text-dim);
         }
 
         .form-group input {
             padding: 11px 14px;
-            background: var(--input-bg);
+            background: var(--bg-input);
             border: 1.5px solid var(--border);
             border-radius: 8px;
             font-size: 14px;
-            color: var(--text-dark);
+            color: var(--text-bright);
             font-family: 'DM Sans', sans-serif;
             outline: none;
             transition: border-color 0.2s, box-shadow 0.2s;
         }
 
         .form-group input:focus {
-            border-color: var(--navy);
-            box-shadow: 0 0 0 3px rgba(43,47,107,0.08);
-            background: #fff;
+            border-color: var(--grey);
+            box-shadow: 0 0 0 3px rgba(138,148,166,0.1);
+            background: #131b2e;
         }
 
-        .form-group input::placeholder { color: #b0b5d0; }
+        .form-group input::placeholder { color: var(--text-dim); }
 
-        /* ── OPTION PILLS ────────────────────────────── */
+        /* ── SECTION LABELS ──────────────────────────── */
         .section-label {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.6px;
-            color: var(--text-muted);
+            letter-spacing: 0.7px;
+            color: var(--text-dim);
             margin: 16px 0 8px;
         }
 
-        .option-group {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
+        /* ── OPTION PILLS ────────────────────────────── */
+        .option-group { display: flex; gap: 8px; flex-wrap: wrap; }
 
         .option {
-            padding: 7px 16px;
+            padding: 7px 15px;
             border-radius: 50px;
             border: 1.5px solid var(--border);
             font-size: 13px;
             font-weight: 500;
-            color: var(--text-muted);
+            color: var(--text-mid);
             cursor: pointer;
             transition: all 0.18s;
             user-select: none;
-            background: var(--input-bg);
+            background: var(--bg-input);
         }
 
-        .option:hover { border-color: var(--navy); color: var(--navy); }
-
+        .option:hover { border-color: var(--grey-dim); color: var(--grey-light); }
         .option.active {
-            background: var(--navy);
-            border-color: var(--navy);
-            color: var(--white);
+            background: var(--grey-glow);
+            border-color: var(--grey);
+            color: var(--grey-light);
         }
 
         /* ── ROLE CARDS ──────────────────────────────── */
@@ -281,10 +296,10 @@
         }
 
         .role-card {
-            padding: 12px 16px;
+            padding: 13px 16px;
             border-radius: 10px;
-            border: 2px solid var(--border);
-            background: var(--input-bg);
+            border: 1.5px solid var(--border);
+            background: var(--bg-input);
             cursor: pointer;
             transition: all 0.18s;
             text-align: center;
@@ -292,18 +307,17 @@
 
         .role-card h3 {
             font-family: 'Syne', sans-serif;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 700;
-            color: var(--text-muted);
+            color: var(--text-dim);
         }
 
-        .role-card:hover { border-color: var(--navy); }
-
+        .role-card:hover { border-color: var(--grey-dim); }
         .role-card.active {
-            border-color: var(--yellow);
-            background: rgba(245,197,24,0.08);
+            border-color: var(--grey);
+            background: var(--grey-glow);
         }
-        .role-card.active h3 { color: var(--navy); }
+        .role-card.active h3 { color: var(--grey-light); }
 
         /* ── ACTIONS ─────────────────────────────────── */
         .form-actions { margin-top: 20px; }
@@ -313,25 +327,23 @@
             align-items: flex-start;
             gap: 10px;
             font-size: 12px;
-            color: var(--text-muted);
+            color: var(--text-dim);
             margin-bottom: 16px;
         }
-
         .terms-row input[type="checkbox"] {
             margin-top: 2px;
-            accent-color: var(--navy);
+            accent-color: var(--grey);
             width: 14px; height: 14px;
             cursor: pointer;
             flex-shrink: 0;
         }
-
-        .terms-row a { color: var(--navy); font-weight: 600; text-decoration: none; }
+        .terms-row a { color: var(--grey-light); font-weight: 600; text-decoration: none; }
 
         .btn-register {
             width: 100%;
             padding: 13px;
-            background: var(--yellow);
-            color: var(--navy);
+            background: var(--grey);
+            color: var(--bg-dark);
             border: none;
             border-radius: 10px;
             font-family: 'Syne', sans-serif;
@@ -341,8 +353,7 @@
             transition: background 0.2s, transform 0.15s;
             letter-spacing: 0.3px;
         }
-
-        .btn-register:hover { background: var(--yellow-dark); transform: translateY(-1px); }
+        .btn-register:hover { background: var(--grey-light); transform: translateY(-1px); }
         .btn-register:active { transform: translateY(0); }
 
         .divider {
@@ -351,7 +362,7 @@
             gap: 12px;
             margin: 14px 0;
             font-size: 12px;
-            color: var(--text-muted);
+            color: var(--text-dim);
         }
         .divider::before, .divider::after {
             content: "";
@@ -363,27 +374,27 @@
         .btn-google {
             width: 100%;
             padding: 11px;
-            background: var(--white);
+            background: var(--bg-input);
             border: 1.5px solid var(--border);
             border-radius: 10px;
             font-size: 14px;
             font-weight: 500;
-            color: var(--text-dark);
+            color: var(--text-mid);
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
-            transition: border-color 0.2s, box-shadow 0.2s;
+            transition: border-color 0.2s, color 0.2s;
+            font-family: 'DM Sans', sans-serif;
         }
-
-        .btn-google:hover { border-color: #4285F4; box-shadow: 0 0 0 3px rgba(66,133,244,0.1); }
+        .btn-google:hover { border-color: var(--grey-dim); color: var(--text-bright); }
 
         .error-msg {
             font-size: 12px;
-            color: #e74c3c;
+            color: #f87171;
             min-height: 18px;
-            margin: 6px 0 0;
+            margin: 8px 0 0;
         }
 
         /* ── OTP OVERLAY ─────────────────────────────── */
@@ -391,8 +402,8 @@
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(10,14,30,0.92);
-            backdrop-filter: blur(14px);
+            background: rgba(5,8,16,0.94);
+            backdrop-filter: blur(16px);
             z-index: 99999;
             justify-content: center;
             align-items: center;
@@ -400,67 +411,71 @@
         #otpOverlay.show { display: flex; }
 
         .otp-card {
-            background: #fff;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
             border-radius: 20px;
             padding: 40px 36px;
             width: 380px;
             text-align: center;
-            box-shadow: 0 32px 80px rgba(0,0,0,0.4);
+            box-shadow: 0 32px 80px rgba(0,0,0,0.7);
         }
         .otp-card h3 {
             font-family: 'Syne', sans-serif;
-            font-size: 22px;
+            font-size: 21px;
             font-weight: 800;
-            color: var(--text-dark);
+            color: var(--text-bright);
             margin-bottom: 6px;
         }
         .otp-card > p {
-            color: var(--text-muted);
+            color: var(--text-mid);
             font-size: 13px;
             margin-bottom: 24px;
             line-height: 1.6;
         }
-        .otp-card > p span { color: var(--navy); font-weight: 600; }
+        .otp-card > p span { color: var(--grey-light); font-weight: 600; }
 
         .otp-inputs { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
         .otp-inputs input {
             width: 50px; height: 58px;
             text-align: center;
             font-size: 24px; font-weight: 700;
-            background: var(--input-bg);
+            background: var(--bg-input);
             border: 2px solid var(--border);
             border-radius: 12px;
-            color: var(--text-dark);
+            color: var(--text-bright);
             outline: none;
             transition: border-color 0.2s;
+            font-family: 'Syne', sans-serif;
         }
-        .otp-inputs input:focus { border-color: var(--navy); box-shadow: 0 0 0 3px rgba(43,47,107,0.1); }
-        .otp-inputs input.filled { border-color: var(--yellow); background: rgba(245,197,24,0.08); }
+        .otp-inputs input:focus { border-color: var(--grey); box-shadow: 0 0 0 3px rgba(138,148,166,0.12); }
+        .otp-inputs input.filled { border-color: var(--grey); background: var(--grey-glow); }
 
         .verify-btn {
             width: 100%; padding: 13px; border-radius: 10px; border: none;
-            background: var(--navy);
-            color: white; font-size: 15px; font-weight: 700;
+            background: var(--grey);
+            color: var(--bg-dark);
+            font-size: 15px; font-weight: 700;
             font-family: 'Syne', sans-serif;
             cursor: pointer; transition: all 0.2s; margin-bottom: 14px;
         }
-        .verify-btn:hover { opacity: 0.9; transform: translateY(-1px); }
-        .verify-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .verify-btn:hover { background: var(--grey-light); transform: translateY(-1px); }
+        .verify-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
-        .resend-row { font-size: 13px; color: var(--text-muted); }
-        .resend-row a { color: var(--navy); cursor: pointer; font-weight: 600; }
-        #otpTimer { color: var(--yellow-dark); font-weight: 600; }
+        .resend-row { font-size: 13px; color: var(--text-dim); }
+        .resend-row a { color: var(--grey-light); cursor: pointer; font-weight: 600; }
+        #otpTimer { color: var(--grey); font-weight: 600; }
         #otpMsg { font-size: 13px; min-height: 18px; margin-bottom: 12px; }
-        #otpMsg.success { color: #27ae60; }
-        #otpMsg.error   { color: #e74c3c; }
+        #otpMsg.success { color: #4ade80; }
+        #otpMsg.error   { color: #f87171; }
 
         /* ── TOAST ───────────────────────────────────── */
         #toast {
             position: fixed;
             bottom: 30px; left: 50%;
             transform: translateX(-50%) translateY(20px);
-            background: var(--text-dark);
-            color: #fff;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-bright);
             padding: 12px 24px;
             border-radius: 50px;
             font-size: 14px;
@@ -470,7 +485,11 @@
             pointer-events: none;
         }
         #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-        #toast.error { background: #e74c3c; }
+        #toast.error { background: #1e0a0a; border-color: rgba(248,113,113,0.4); color: #fca5a5; }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-dark); }
+        ::-webkit-scrollbar-thumb { background: var(--grey-dim); border-radius: 3px; }
     </style>
 </head>
 <body>
@@ -500,7 +519,7 @@
 
 <!-- TOPBAR -->
 <div class="topbar">
-    <div class="logo-text">HireX</div>
+    <img src="images/logo.png" class="logo-img" alt="Logo">
     <div class="nav-links">
         <a href="index.html">Home</a>
         <a href="login.html">Sign In</a>
@@ -514,12 +533,13 @@
     <!-- LEFT -->
     <div class="register-left">
         <div class="left-circle"></div>
+        <div class="left-glow"></div>
         <div class="left-content">
             <span class="quote-mark">"</span>
             <h2>Let's Make<br>it Happen<br>Together!</h2>
-            <p>Join thousands of job seekers and recruiters<br>building careers on HireX every day.</p>
+            <p>Join thousands of job seekers and recruiters<br>building careers every single day.</p>
             <div class="left-badge">
-                <span>🚀</span> 50,000+ Active Listings
+                🚀 &nbsp;50,000+ Active Listings
             </div>
         </div>
     </div>
