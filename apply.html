@@ -8,6 +8,12 @@
 <!-- LINK CSS -->
 <link rel="stylesheet" href="style.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<style>
+@media (max-width: 768px) {
+  .topbar { height: 56px; }
+  .layout { margin-top: 56px; }
+}
+</style>
 </head>
 
 <body>
@@ -342,5 +348,24 @@ function logout() {
 }
 </script>
 
+<!-- 📱 BOTTOM NAV -->
+<div class="bottom-nav">
+    <div class="nav-item" onclick="window.location.href='dashboard.html'">
+        <i class="ri-dashboard-line"></i>
+        <span>Home</span>
+    </div>
+    <div class="nav-item" onclick="window.location.href='dashboard.html'">
+        <i class="ri-briefcase-2-line"></i>
+        <span>Jobs</span>
+    </div>
+    <div class="nav-item active">
+        <i class="ri-file-add-line"></i>
+        <span>Apply</span>
+    </div>
+    <div class="nav-item" onclick="window.location.href='dashboard.html'">
+        <i class="ri-user-3-line"></i>
+        <span>Profile</span>
+    </div>
+</div>
+
 </body>
-</html>

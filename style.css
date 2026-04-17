@@ -1751,3 +1751,224 @@ color:var(--muted);
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 6px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
+
+/* ================================================================
+   📱 MOBILE RESPONSIVE ADDITIONS — Full Coverage
+   All breakpoints: 480px (small phones), 768px (tablets/large phones)
+================================================================ */
+
+/* ── TOPBAR MOBILE ── */
+@media (max-width: 768px) {
+  .topbar {
+    padding: 0 14px;
+    height: 56px;
+  }
+  .logo-img { height: 28px; }
+  .top-actions { gap: 10px; }
+  .profile-top span { display: none; }
+  .profile-top { padding: 7px 10px; }
+}
+
+/* ── LAYOUT MOBILE ── */
+@media (max-width: 768px) {
+  .layout { margin-top: 56px; }
+  .main { padding: 16px 12px 90px; }
+}
+
+/* ── LOGIN PAGE MOBILE ── */
+@media (max-width: 768px) {
+  .login-page { height: auto; min-height: 100vh; }
+  .login-container { flex-direction: column; height: auto; min-height: 100vh; }
+  .left-panel { display: none !important; }
+  .right-panel {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 100vh;
+    padding: 40px 20px 40px;
+    justify-content: flex-start;
+    padding-top: 60px;
+  }
+  .login-card {
+    max-width: 100% !important;
+    width: 100% !important;
+    gap: 12px !important;
+    padding: 0 4px;
+  }
+  .login-title { font-size: 26px !important; }
+  .login-sub { font-size: 13px !important; }
+  .signin-btn { padding: 13px !important; }
+}
+
+/* ── REGISTER PAGE MOBILE ── */
+@media (max-width: 768px) {
+  .center-page {
+    padding: 70px 12px 40px;
+    align-items: flex-start;
+  }
+  .register-card {
+    padding: 24px 18px !important;
+    border-radius: var(--radius) !important;
+  }
+  .two-col {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .two-col input { width: 100% !important; }
+  .role-container { flex-direction: column; gap: 10px; }
+  .role-card { padding: 14px; }
+  .option-group { gap: 8px; }
+  .option { padding: 8px 14px; font-size: 13px; }
+}
+
+/* ── COMPLETE PROFILE MOBILE ── */
+@media (max-width: 768px) {
+  body > .container,
+  .container[style*="500px"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 20px 16px !important;
+    margin: 70px 12px 20px !important;
+    border-radius: var(--radius) !important;
+  }
+}
+
+/* ── APPLY PAGE MOBILE ── */
+@media (max-width: 768px) {
+  .apply-card {
+    padding: 18px 14px !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+  .form-container { gap: 10px; }
+  .left-fields { gap: 10px; }
+  #analysisBox { padding: 12px; }
+  #analysisBox h3 { font-size: 15px; }
+}
+
+/* ── EMPLOYER / DASHBOARD MOBILE ── */
+@media (max-width: 768px) {
+  .stats { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-card { padding: 16px 12px; }
+  .stat-card span { font-size: 24px; }
+  .jobs-container { grid-template-columns: 1fr; }
+  .app-grid { grid-template-columns: 1fr; }
+  .profile-wrapper { padding: 20px 14px; }
+  .profile-header { flex-direction: column; gap: 14px; align-items: flex-start; }
+  .profile-img { width: 80px; height: 80px; }
+  .profile-form { grid-template-columns: 1fr; gap: 12px; }
+  .form-grid { grid-template-columns: 1fr !important; gap: 12px; }
+  .post-card { padding: 18px 14px !important; }
+  .actions { gap: 8px; }
+  .actions button { flex: 1; min-width: 0; padding: 9px 10px; font-size: 13px; }
+  .job-card-premium { padding: 16px 14px; }
+  .job-card-premium h2 { font-size: 18px; }
+  .job-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .job-footer { flex-wrap: wrap; gap: 8px; }
+  .app-header { flex-wrap: wrap; gap: 8px; }
+  .app-card { padding: 16px 14px; }
+}
+
+/* ── INTERVIEW PAGE MOBILE ── */
+@media (max-width: 768px) {
+  .center-page .register-card { max-width: 100% !important; }
+}
+
+/* ── NOTIFICATION BOX MOBILE ── */
+@media (max-width: 768px) {
+  .notif-box {
+    left: 8px;
+    right: 8px;
+    width: auto;
+    top: 64px;
+  }
+}
+
+/* ── HERO (INDEX) MOBILE ── */
+@media (max-width: 768px) {
+  .hero { padding: 24px 16px; height: auto; min-height: 100vh; }
+  .hero-content { margin-top: 40px; padding-bottom: 40px; }
+  .hero-title { font-size: 30px !important; letter-spacing: -0.5px; line-height: 1.2; }
+  .hero-subtitle { font-size: 15px; margin-bottom: 24px; }
+  .hero-badge { font-size: 12px; padding: 7px 16px; margin-bottom: 20px; }
+}
+
+/* ── INDEX PAGE MISC MOBILE ── */
+@media (max-width: 768px) {
+  .features { padding: 40px 16px; gap: 14px; }
+  .feature-card { width: 100%; }
+  .cta { padding: 48px 20px; }
+  .cta h2 { font-size: 24px; }
+  .company-strip { padding: 0 16px; margin-top: 40px; }
+  .logo-track img { height: 48px; }
+  .logo-track { gap: 40px; }
+  .jobs { padding: 24px 16px; }
+  .job-card { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .job-actions { width: 100%; }
+  .job-card button { width: 100%; }
+  .stats { padding: 28px 16px; gap: 20px; }
+  .footer { padding: 20px 16px; font-size: 12px; }
+  .nav-links { gap: 2px; }
+  .nav-links a { font-size: 13px; padding: 7px 10px; }
+}
+
+/* ── SMALL PHONES (≤480px) ── */
+@media (max-width: 480px) {
+  h2 { font-size: 19px; }
+  .hero-title { font-size: 26px !important; }
+  .stat-card span { font-size: 22px; }
+  .login-title { font-size: 22px !important; }
+  .topbar { padding: 0 10px; }
+  .top-actions { gap: 8px; }
+  .register-card { padding: 20px 14px !important; }
+  .apply-card { padding: 14px 12px !important; }
+  .notif-box { left: 4px; right: 4px; }
+  .post-special { width: 46px; height: 46px; top: -14px; font-size: 20px; }
+  .nav-item { padding: 4px 8px; font-size: 10px; }
+  .nav-item i { font-size: 18px; }
+  .feature-card { padding: 20px 16px; }
+  .cta h2 { font-size: 20px; }
+  .profile-img { width: 64px; height: 64px; }
+  .actions { flex-direction: column; }
+  .actions button { width: 100%; }
+}
+
+/* ── SAFE AREA (iPhone notch/home bar) ── */
+@supports (padding: max(0px)) {
+  .topbar {
+    padding-left: max(14px, env(safe-area-inset-left));
+    padding-right: max(14px, env(safe-area-inset-right));
+  }
+  .bottom-nav {
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+  }
+}
+
+/* ── TOUCH IMPROVEMENTS ── */
+@media (hover: none) and (pointer: coarse) {
+  /* remove hover transforms that can get stuck on touch */
+  .job-card-premium:hover,
+  .stat-card:hover,
+  .app-card:hover,
+  .feature-card:hover { transform: none; }
+  
+  /* bigger tap targets */
+  .sidebar a { padding: 13px 14px; }
+  .nav-item { min-width: 44px; min-height: 44px; }
+  .apply-btn, .save-btn, .filter-btn, .signin-btn { min-height: 48px; }
+  input, select, textarea { min-height: 46px; }
+  .option, .option-btn { min-height: 40px; padding: 10px 16px; }
+}
+
+/* ── PREVENT HORIZONTAL SCROLL ── */
+html, body { max-width: 100%; overflow-x: hidden; }
+
+/* ── COMPLETE PROFILE PAGE (standalone — inline styles override) ── */
+@media (max-width: 768px) {
+  body > div.container {
+    width: calc(100% - 24px) !important;
+    max-width: 100% !important;
+    margin: 80px 12px 20px !important;
+    padding: 22px 16px !important;
+  }
+}
+

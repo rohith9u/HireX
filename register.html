@@ -2,30 +2,27 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Register - Job Portal</title>
+    <title>Register - HireX</title>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
-            --bg-dark:      #080c14;
-            --bg-panel:     #0d1120;
-            --bg-card:      #111827;
-            --bg-input:     #0f1520;
+            --bg-dark:        #080c14;
+            --bg-input:       #0f1520;
+            --bg-card:        #111827;
 
-            --navy:         #2b2f6b;
+            --grey:           #f7f7f7;
+            --grey-light:     #b0bac8;
+            --grey-dim:       #556070;
+            --grey-glow:      rgba(11, 11, 11, 0.13);
+            --grey-border:    rgba(205, 207, 209, 0.22);
 
-            --grey:         #8a94a6;
-            --grey-light:   #b0bac8;
-            --grey-dim:     #556070;
-            --grey-glow:    rgba(138,148,166,0.13);
-            --grey-border:  rgba(138,148,166,0.22);
-
-            --text-bright:  #e8ecf4;
-            --text-mid:     #9aa3b5;
-            --text-dim:     #5a6478;
-            --border:       rgba(255,255,255,0.08);
+            --text-bright:    #f1f5f9;
+            --text-mid:       #94a3b8;
+            --text-dim:       #5a6478;
+            --border:         rgba(138,148,166,0.12);
         }
 
         html, body { height: 100%; }
@@ -50,7 +47,7 @@
             padding: 0 40px;
             height: 56px;
             background: rgba(8,12,20,0.97);
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
             backdrop-filter: blur(12px);
         }
 
@@ -62,14 +59,14 @@
 
         .nav-links { display: flex; gap: 28px; }
         .nav-links a {
-            color: var(--text-mid);
+            color: rgba(255,255,255,0.5);
             text-decoration: none;
             font-size: 14px;
             font-weight: 500;
             transition: color 0.2s;
         }
-        .nav-links a:hover { color: var(--grey-light); }
-        .nav-links a.active { color: var(--text-bright); font-weight: 600; }
+        .nav-links a:hover { color: rgba(255,255,255,0.85); }
+        .nav-links a.active { color: #fff; font-weight: 600; }
 
         /* ── MAIN WRAPPER ────────────────────────────── */
         .register-wrapper {
@@ -79,55 +76,52 @@
             padding-top: 56px;
         }
 
-        /* ── LEFT PANEL ──────────────────────────────── */
+        /* ══════════════════════════════════════
+           LEFT PANEL — grey bg (like screenshot)
+           with thin decorative strip on far left
+        ══════════════════════════════════════ */
         .register-left {
-            flex: 0 0 42%;
-            background: var(--navy);
+            flex: 0 0 44%;
+            background: #c5c5c6cc;
             display: flex;
             align-items: center;
             justify-content: center;
             position: relative;
             overflow: hidden;
-            padding: 60px 50px;
+            padding: 60px 50px 60px 68px;
         }
 
-        /* Grey accent bar */
-        .register-left::before {
-            content: "";
+        /* Thin ~20px decorative vertical strip on the far left edge */
+        .deco-strip {
             position: absolute;
             left: 0; top: 0; bottom: 0;
-            width: 5px;
-            background: linear-gradient(to bottom, var(--grey-light), var(--grey-dim));
+            width: 20px;
+            z-index: 3;
+            overflow: hidden;
         }
 
-        /* Subtle grid texture */
-        .register-left::after {
+        /* Purple paint stroke filling the strip */
+        .deco-strip::before {
             content: "";
+            position: absolute;
+            left: -4px; top: 0;
+            width: 28px; height: 100%;
+            background: linear-gradient(180deg,
+               #080c14
+            );
+           
+        }
+
+    
+
+        /* Subtle grid texture */
+        .left-grid {
             position: absolute;
             inset: 0;
             background-image:
-                linear-gradient(rgba(138,148,166,0.04) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(138,148,166,0.04) 1px, transparent 1px);
+                linear-gradient(rgba(0,0,0,0.07) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,0,0,0.07) 1px, transparent 1px);
             background-size: 40px 40px;
-            pointer-events: none;
-        }
-
-        .left-glow {
-            position: absolute;
-            bottom: -120px; right: -120px;
-            width: 380px; height: 380px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(138,148,166,0.07) 0%, transparent 70%);
-            pointer-events: none;
-            z-index: 1;
-        }
-
-        .left-circle {
-            position: absolute;
-            top: -50px; left: 30px;
-            width: 200px; height: 200px;
-            border-radius: 50%;
-            border: 1px solid rgba(138,148,166,0.1);
             pointer-events: none;
             z-index: 1;
         }
@@ -135,32 +129,32 @@
         .left-content {
             position: relative;
             z-index: 2;
-            color: var(--text-bright);
-            max-width: 340px;
+            max-width: 360px;
+            width: 100%;
         }
 
         .quote-mark {
             font-family: 'Syne', sans-serif;
-            font-size: 72px;
-            line-height: 0.6;
-            color: var(--grey);
+            font-size: 64px;
+            line-height: 0.7;
+            color: rgba(0,0,0,0.22);
             font-weight: 800;
             display: block;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
 
         .left-content h2 {
             font-family: 'Syne', sans-serif;
-            font-size: 42px;
+            font-size: 44px;
             font-weight: 800;
-            line-height: 1.15;
-            color: var(--text-bright);
+            line-height: 1.1;
+            color: #111827;
         }
 
         .left-content p {
             margin-top: 18px;
             font-size: 14px;
-            color: var(--text-mid);
+            color: rgba(0,0,0,0.5);
             line-height: 1.75;
         }
 
@@ -169,51 +163,58 @@
             display: inline-flex;
             align-items: center;
             gap: 10px;
-            background: var(--grey-glow);
-            border: 1px solid var(--grey-border);
+            background: rgba(0,0,0,0.08);
+            border: 1px solid rgba(0,0,0,0.13);
             border-radius: 50px;
             padding: 9px 18px;
             font-size: 13px;
-            color: var(--grey-light);
+            color: rgba(0,0,0,0.55);
             font-weight: 500;
         }
 
-        /* ── RIGHT PANEL ─────────────────────────────── */
+        /* ══════════════════════════════════════
+           RIGHT PANEL — dark navy (same as bg)
+           No box/card wrapper, plain dark
+        ══════════════════════════════════════ */
         .register-right {
             flex: 1;
             background: var(--bg-dark);
             display: flex;
             justify-content: center;
             align-items: flex-start;
-            padding: 40px 30px;
+            padding: 40px 36px;
             overflow-y: auto;
         }
 
         .register-card {
             width: 100%;
-            max-width: 480px;
+            max-width: 500px;
         }
 
         .card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
             margin-bottom: 28px;
+        }
+
+        .card-header .signin-link {
+            font-size: 13px;
+            color: var(--text-dim);
+            text-decoration: none;
+            display: block;
+            text-align: right;
+            margin-bottom: 8px;
+        }
+        .card-header .signin-link strong {
+            color: var(--text-bright);
+            font-weight: 700;
         }
 
         .card-header h2 {
             font-family: 'Syne', sans-serif;
-            font-size: 24px;
+            font-size: 26px;
             font-weight: 800;
             color: var(--text-bright);
+            letter-spacing: -0.3px;
         }
-
-        .card-header a {
-            font-size: 13px;
-            color: var(--text-dim);
-            text-decoration: none;
-        }
-        .card-header a span { color: var(--grey-light); font-weight: 600; }
 
         /* ── FORM GRID ───────────────────────────────── */
         .form-grid {
@@ -343,7 +344,7 @@
             width: 100%;
             padding: 13px;
             background: var(--grey);
-            color: var(--bg-dark);
+            color: #312d2d;
             border: none;
             border-radius: 10px;
             font-family: 'Syne', sans-serif;
@@ -353,42 +354,8 @@
             transition: background 0.2s, transform 0.15s;
             letter-spacing: 0.3px;
         }
-        .btn-register:hover { background: var(--grey-light); transform: translateY(-1px); }
+        .btn-register:hover { background: var(--grey-light); color: #080c14; transform: translateY(-1px); }
         .btn-register:active { transform: translateY(0); }
-
-        .divider {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin: 14px 0;
-            font-size: 12px;
-            color: var(--text-dim);
-        }
-        .divider::before, .divider::after {
-            content: "";
-            flex: 1;
-            height: 1px;
-            background: var(--border);
-        }
-
-        .btn-google {
-            width: 100%;
-            padding: 11px;
-            background: var(--bg-input);
-            border: 1.5px solid var(--border);
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 500;
-            color: var(--text-mid);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            transition: border-color 0.2s, color 0.2s;
-            font-family: 'DM Sans', sans-serif;
-        }
-        .btn-google:hover { border-color: var(--grey-dim); color: var(--text-bright); }
 
         .error-msg {
             font-size: 12px;
@@ -453,12 +420,12 @@
         .verify-btn {
             width: 100%; padding: 13px; border-radius: 10px; border: none;
             background: var(--grey);
-            color: var(--bg-dark);
+            color: #fff;
             font-size: 15px; font-weight: 700;
             font-family: 'Syne', sans-serif;
             cursor: pointer; transition: all 0.2s; margin-bottom: 14px;
         }
-        .verify-btn:hover { background: var(--grey-light); transform: translateY(-1px); }
+        .verify-btn:hover { background: var(--grey-light); color: #080c14; transform: translateY(-1px); }
         .verify-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
         .resend-row { font-size: 13px; color: var(--text-dim); }
@@ -532,25 +499,23 @@
 
     <!-- LEFT -->
     <div class="register-left">
-        <div class="left-circle"></div>
-        <div class="left-glow"></div>
+        <div class="deco-strip"></div>
+        <div class="left-grid"></div>
         <div class="left-content">
             <span class="quote-mark">"</span>
             <h2>Let's Make<br>it Happen<br>Together!</h2>
             <p>Join thousands of job seekers and recruiters<br>building careers every single day.</p>
-            <div class="left-badge">
-                🚀 &nbsp;50,000+ Active Listings
-            </div>
+            <div class="left-badge">🚀 &nbsp;50,000+ Active Listings</div>
         </div>
     </div>
 
-    <!-- RIGHT -->
+    <!-- RIGHT — plain dark, no box -->
     <div class="register-right">
         <div class="register-card">
 
             <div class="card-header">
+                <a href="login.html" class="signin-link">Have an account? <strong>Sign In</strong></a>
                 <h2>Create An Account</h2>
-                <a href="login.html">Have an account? <span>Sign In</span></a>
             </div>
 
             <div class="form-grid">
@@ -602,10 +567,10 @@
             <p class="section-label">Register as</p>
             <div class="role-container">
                 <div class="role-card active" onclick="selectRole('user')" id="userCard">
-                    <h3>🎯 Job Applicant</h3>
+                    <h3>Job Applicant</h3>
                 </div>
                 <div class="role-card" onclick="selectRole('employer')" id="employerCard">
-                    <h3>🏢 Recruiter</h3>
+                    <h3>Recruiter</h3>
                 </div>
             </div>
 
@@ -617,11 +582,6 @@
                     <label for="terms">I agree to the <a href="#">Terms & Conditions</a> and <a href="#">Privacy Policy</a></label>
                 </div>
                 <button class="btn-register" onclick="register()">Create Account</button>
-                <div class="divider">or</div>
-                <button class="btn-google" onclick="showToast('Google sign-up coming soon!','error')">
-                    <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.2 0 5.6 1.1 7.4 2.8l5.5-5.5C33.5 3.5 29.1 1.5 24 1.5 15 1.5 7.4 7 4 14.8l6.4 5C12.2 13.2 17.6 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.5 3-2.2 5.5-4.7 7.2l7.3 5.7c4.3-4 6.7-9.8 6.7-16.9z"/><path fill="#FBBC05" d="M10.4 28.7c-.5-1.5-.8-3-.8-4.7s.3-3.2.8-4.7l-6.4-5C2.5 17.2 1.5 20.5 1.5 24s1 6.8 2.5 9.7l6.4-5z"/><path fill="#34A853" d="M24 46.5c5.1 0 9.5-1.7 12.6-4.6l-7.3-5.7c-1.8 1.2-4 1.9-5.3 1.9-6.4 0-11.8-3.7-13.6-9.4l-6.4 5C7.4 41 15 46.5 24 46.5z"/></svg>
-                    Sign up with Google
-                </button>
             </div>
 
         </div>
