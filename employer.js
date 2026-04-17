@@ -445,10 +445,7 @@ function loadMyJobs() {
                     ${statusHTML}
                 </div>
 
-                ${job.status !== "closed"
-                    ? `<button class="closed-btn" onclick="closeJob('${job._id}')">Close Job</button>`
-                    : `<button disabled style="opacity:0.5;cursor:not-allowed;">Closed</button>`
-                }
+                
             `;
 
             container.appendChild(div);
