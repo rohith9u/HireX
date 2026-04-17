@@ -71,7 +71,7 @@
                 <div class="left-fields">
                     <input id="name" type="text" placeholder="Full Name" required>
 
-<input id="email" type="email" placeholder="Email (@gmail.com only)" required pattern="^[a-zA-Z0-9._%+-]+@gmail\.com$">
+<input id="email" type="email" placeholder="Loading email..." readonly style="opacity:0.6; cursor:not-allowed; background:#1e293b;">
 
 <input id="phone" type="tel" placeholder="Phone Number" required pattern="[0-9]{10}" maxlength="10">
 
@@ -105,6 +105,44 @@
 </body>
 
 <script>
+    // ✅ AUTO-LOAD USER EMAIL + NAME FROM DATABASE
+    window.addEventListener("DOMContentLoaded", async () => {
+        let sessionUser = JSON.parse(localStorage.getItem("loggedInUser") || "null");
+
+        if (!sessionUser) {
+            window.location.replace("index.html");
+            return;
+        }
+
+        let userEmail = localStorage.getItem("userEmail") || sessionUser.email || "";
+
+        try {
+            let res = await fetch(`https://hirex-backend-sio8.onrender.com/profile/${userEmail}`);
+            let user = await res.json();
+
+            if (user && !user.error) {
+                // ✅ Fill email — readonly, user cannot change it
+                document.getElementById("email").value = user.email || userEmail;
+
+                // ✅ Pre-fill name too
+                let fullName = ((user.firstName || "") + " " + (user.lastName || "")).trim();
+                if (fullName) document.getElementById("name").value = fullName;
+
+                // ✅ Pre-fill city if available
+                if (user.city) document.getElementById("city").value = user.city;
+            } else {
+                // fallback to localStorage
+                document.getElementById("email").value = userEmail;
+                let fullName = ((sessionUser.firstName || "") + " " + (sessionUser.lastName || "")).trim();
+                if (fullName) document.getElementById("name").value = fullName;
+            }
+        } catch (err) {
+            console.log("Error fetching user profile:", err);
+            // fallback to localStorage
+            document.getElementById("email").value = userEmail;
+        }
+    });
+
     document.getElementById("resumeInput").addEventListener("change", analyzeResume);
 
 // ✅ ADD THESE
@@ -131,13 +169,6 @@ function submitApplication() {
 if (!/^[0-9]{10}$/.test(phone)) {
     msg.style.color = "red";
     msg.innerText = "Enter valid 10-digit phone number ❌";
-    return;
-}
-
-// 🔥 GMAIL VALIDATION
-if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(email)) {
-    msg.style.color = "red";
-    msg.innerText = "Only Gmail allowed ❌";
     return;
 }
     if (!name || !email || !phone || !city || !degree || !experience || !skills || !resumeFile) {
@@ -307,7 +338,7 @@ function extractExperience(text) {
 }
 function logout() {
     localStorage.clear();
-    window.location.href = "login.html";
+    window.location.href = "index.html";
 }
 </script>
 

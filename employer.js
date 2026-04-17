@@ -112,7 +112,7 @@ window.addEventListener("popstate", function () {
 
         if (confirmLogout) {
             localStorage.clear();
-            window.location.href = "login.html";
+            window.location.href = "index.html";
         } else {
             // keep user on page
             history.pushState({ page: "dashboard" }, "", "");
@@ -625,6 +625,12 @@ function saveProfile() {
 
     let user = JSON.parse(localStorage.getItem("loggedInUser"));
 
+    if (!user || !user._id) {
+        showToast("Session expired. Please login again.", "error");
+        setTimeout(() => window.location.href = "index.html", 1500);
+        return;
+    }
+
     let contact = document.getElementById("contact").value.trim();
 
     // 🔥 PHONE VALIDATION
@@ -635,10 +641,10 @@ function saveProfile() {
 
     let data = {
         userId: user._id,
-        firstName: document.getElementById("firstName").value,
-        lastName: document.getElementById("lastName").value,
+        firstName: document.getElementById("firstName").value.trim(),
+        lastName: document.getElementById("lastName").value.trim(),
         contact: contact,
-        city: document.getElementById("city").value,
+        city: document.getElementById("city").value.trim(),
         gender: document.getElementById("gender").value,
         type: document.getElementById("type").value
     };
@@ -649,11 +655,22 @@ function saveProfile() {
         body: JSON.stringify(data)
     })
     .then(res => res.json())
-    .then(() => {
-        showToast("Profile updated!");
+    .then(result => {
+        if (result.error) {
+            showToast("Update failed: " + result.error, "error");
+            return;
+        }
+        // ✅ Update localStorage so name etc. reflects immediately
+        let updated = { ...user, ...data };
+        localStorage.setItem("loggedInUser", JSON.stringify(updated));
+        showToast("Profile updated successfully! ✅");
         showSection("profile");
+    })
+    .catch(err => {
+        console.log("Save profile error:", err);
+        showToast("Failed to update profile. Try again.", "error");
     });
-}// ==========================
+}
 // 🔥 POST JOB
 // ==========================
 function postJob() {
@@ -1079,7 +1096,7 @@ function closeJob(jobId) {
 // 🔓 LOGOUT
 function logout() {
     localStorage.clear();
-    window.location.replace("login.html"); // ✅ FIXED
+    window.location.replace("index.html");
 }
 
     let user = JSON.parse(localStorage.getItem("loggedInUser"));

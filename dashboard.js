@@ -395,6 +395,12 @@ function saveProfile() {
 
     let user = JSON.parse(localStorage.getItem("loggedInUser"));
 
+    if (!user || !user._id) {
+        showToast("Session expired. Please login again.", "error");
+        setTimeout(() => window.location.href = "index.html", 1500);
+        return;
+    }
+
     let contact = document.getElementById("contact").value.trim();
 
     // 🔥 PHONE VALIDATION
@@ -405,10 +411,10 @@ function saveProfile() {
 
     let data = {
         userId: user._id,
-        firstName: document.getElementById("firstName").value,
-        lastName: document.getElementById("lastName").value,
+        firstName: document.getElementById("firstName").value.trim(),
+        lastName: document.getElementById("lastName").value.trim(),
         contact: contact,
-        city: document.getElementById("city").value,
+        city: document.getElementById("city").value.trim(),
         gender: document.getElementById("gender").value,
         type: document.getElementById("type").value
     };
@@ -419,9 +425,20 @@ function saveProfile() {
         body: JSON.stringify(data)
     })
     .then(res => res.json())
-    .then(() => {
-        showToast("Profile updated!");
+    .then(result => {
+        if (result.error) {
+            showToast("Update failed: " + result.error, "error");
+            return;
+        }
+        // ✅ Update localStorage so name reflects immediately
+        let updated = { ...user, ...data };
+        localStorage.setItem("loggedInUser", JSON.stringify(updated));
+        showToast("Profile updated successfully! ✅");
         showSection("profile");
+    })
+    .catch(err => {
+        console.log("Save profile error:", err);
+        showToast("Failed to update profile. Try again.", "error");
     });
 }
 function loadStats() {
@@ -865,8 +882,8 @@ function applyFilters() {
 // LOGOUT
 // ==========================
 function logout() {
-    localStorage.removeItem("loggedInUser"); 
-    window.location.replace("login.html");
+    localStorage.clear();
+    window.location.replace("index.html");
 }
 function loadNotifications() {
     Promise.all([
@@ -968,8 +985,8 @@ window.onpopstate = function () {
         let confirmLogout = confirm("Are you sure you want to logout?");
 
         if (confirmLogout) {
-            localStorage.removeItem("loggedInUser");
-            window.location.href = "login.html";  // ✅ only here
+            localStorage.clear();
+            window.location.href = "index.html";  // ✅ only here
         } else {
             // ✅ stay on dashboard
             history.pushState({ section: "dashboard" }, "", "");
