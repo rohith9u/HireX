@@ -406,9 +406,7 @@ body {
 .stat-box h2 {
     font-size: 34px;
     font-weight: 800;
-    background: linear-gradient(90deg, #6366f1, #22d3ee);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    
 }
 
 .stat-box p {
