@@ -457,6 +457,90 @@
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: var(--bg-dark); }
         ::-webkit-scrollbar-thumb { background: var(--grey-dim); border-radius: 3px; }
+
+        /* ================= MOBILE FIX ================= */
+@media (max-width: 768px) {
+
+    /* Remove left side completely */
+    .register-left {
+        display: none !important;
+    }
+
+    /* Make right section full width */
+    .register-wrapper {
+        flex-direction: column;
+    }
+
+    .register-right {
+        width: 100%;
+        padding: 20px 16px;
+        align-items: center;
+    }
+
+    /* Center form */
+    .register-card {
+        width: 100%;
+        max-width: 420px;
+        margin: auto;
+    }
+
+    /* Fix heading */
+    .card-header h2 {
+        font-size: 28px;
+        line-height: 1.2;
+    }
+
+    /* Make inputs single column */
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .form-group.full,
+    .form-group.half {
+        grid-column: span 1;
+    }
+
+    /* Option buttons spacing */
+    .option-group {
+        gap: 10px;
+    }
+
+    .option {
+        padding: 10px 16px;
+        font-size: 14px;
+    }
+
+    /* Role cards stacked */
+    .role-container {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    /* Bigger button like login page */
+    .btn-register {
+        padding: 16px;
+        font-size: 16px;
+        border-radius: 14px;
+    }
+
+    /* Better input feel (important for mobile) */
+    input {
+        font-size: 16px; /* prevents zoom */
+        padding: 14px;
+    }
+
+    /* Fix top spacing */
+    .register-wrapper {
+        padding-top: 70px;
+    }
+
+    /* Align "Have account" text */
+    .card-header .signin-link {
+        text-align: left;
+        margin-bottom: 12px;
+    }
+}
     </style>
 </head>
 <body>
