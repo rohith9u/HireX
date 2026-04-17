@@ -16,7 +16,7 @@ if (!sessionUser) {
         // ✅ sort latest first (important)
         const latestJobs = jobs
             .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-            .slice(0, 5);
+            .slice(0, 4);
 
         latestJobs.forEach(job => {
             const div = document.createElement("div");
