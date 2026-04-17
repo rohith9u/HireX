@@ -409,15 +409,15 @@ function saveProfile() {
         return;
     }
 
-    let data = {
-        userId: user._id,
-        firstName: document.getElementById("firstName").value.trim(),
-        lastName: document.getElementById("lastName").value.trim(),
-        contact: contact,
-        city: document.getElementById("city").value.trim(),
-        gender: document.getElementById("gender").value,
-        type: document.getElementById("type").value
-    };
+let data = {
+    email: user.email,   // ✅ FIXED
+    firstName: document.getElementById("firstName").value.trim(),
+    lastName: document.getElementById("lastName").value.trim(),
+    contact: contact,
+    city: document.getElementById("city").value.trim(),
+    gender: document.getElementById("gender").value,
+    type: document.getElementById("type").value
+};
 
     fetch("https://hirex-backend-sio8.onrender.com/update-profile", {
         method: "POST",
