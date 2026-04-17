@@ -234,6 +234,8 @@ a:hover { color: var(--text); }
   gap: 14px;
   margin-bottom: 28px;
   flex-wrap: wrap;
+  justify-content: center;
+  text-align: center;
 }
 
 .stat-card {
@@ -354,6 +356,66 @@ a:hover { color: var(--text); }
 }
 
 /* ── STATUS BADGES ── */
+.stats {
+    display: flex;
+    justify-content: center;   /* ✅ center horizontally */
+    align-items: center;
+    gap: 50px;
+
+    width: 100%;
+    margin: 60px auto;         /* ✅ center block */
+    text-align: center;
+}
+body {
+    margin: 0;
+    padding: 0;
+}
+.stat-box {
+    background: linear-gradient(145deg, #0f172a, #1e293b);
+    padding: 25px 40px;
+    border-radius: 18px;
+    text-align: center;
+    min-width: 160px;
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-box::before {
+    content: "";
+    position: absolute;
+    width: 120%;
+    height: 120%;
+    background: radial-gradient(circle, rgba(99,102,241,0.15), transparent 70%);
+    top: -50%;
+    left: -50%;
+    transition: 0.4s;
+}
+
+.stat-box:hover::before {
+    top: 0;
+    left: 0;
+}
+
+.stat-box:hover {
+    transform: translateY(-10px) scale(1.05);
+}
+
+.stat-box h2 {
+    font-size: 34px;
+    font-weight: 800;
+    background: linear-gradient(90deg, #6366f1, #22d3ee);
+    -webkit-text-fill-color: transparent;
+}
+
+.stat-box p {
+    margin-top: 8px;
+    font-size: 14px;
+    color: #94a3b8;
+    letter-spacing: 1px;
+}
 .status-badge {
   padding: 5px 14px;
   border-radius: 50px;
@@ -1334,8 +1396,8 @@ color:var(--muted);
   padding: 8px 20px;
   border-radius: 50px;
   background: rgba(108,99,255,0.1);
-  border: 1px solid rgba(108,99,255,0.25);
-  color: var(--accent2);
+
+
   font-size: 13px;
   font-weight: 500;
   margin-bottom: 28px;
