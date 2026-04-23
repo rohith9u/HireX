@@ -6,18 +6,18 @@ const nodemailer = require("nodemailer");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
- 
+
 const app = express();
- 
-// ── CORS: allow all origins (or lock to your frontend domain) ──
+
+// ── CORS ──────────────────────────────────────────────────────
 app.use(cors({
     origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"]
 }));
- 
+
 app.use(express.json());
- 
+
 // ==========================
 // 🔥 CONNECT MONGODB
 // ==========================
@@ -33,20 +33,19 @@ const startServer = async () => {
         process.exit(1);
     }
 };
- 
+
 startServer();
- 
+
 // ==========================
 // 🔥 MODELS
 // ==========================
- 
-// ─── 1. USERS ───────────────────────────────────────────────────────────────
+
+// ─── 1. USERS ────────────────────────────────────────────────
 const userSchema = new mongoose.Schema({
     firstName:    { type: String, default: "" },
     lastName:     { type: String, default: "" },
     email:        { type: String, required: true, unique: true, lowercase: true, trim: true },
     password:     { type: String, default: "" },
-    // role: "user"/"applicant" for job seekers, "employer"/"recruiter" for employers
     role:         { type: String, enum: ["applicant", "recruiter", "user", "employer"], default: "applicant" },
     skills:       { type: [String], default: [] },
     experience:   { type: Number, default: 0 },
@@ -62,10 +61,10 @@ const userSchema = new mongoose.Schema({
     profileImage: { type: String, default: "" },
     resume:       { type: String, default: "" }
 }, { timestamps: true });
- 
+
 const User = mongoose.model("User", userSchema);
- 
-// ─── 2. JOBS ─────────────────────────────────────────────────────────────────
+
+// ─── 2. JOBS ─────────────────────────────────────────────────
 const jobSchema = new mongoose.Schema({
     title:          { type: String, required: true },
     company:        { type: String, required: true },
@@ -81,10 +80,10 @@ const jobSchema = new mongoose.Schema({
     postedByUser:   { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
     status:         { type: String, enum: ["Open", "Closed", "active", "closed"], default: "Open" }
 }, { timestamps: true });
- 
+
 const Job = mongoose.model("Job", jobSchema);
- 
-// ─── 3. APPLICATIONS ─────────────────────────────────────────────────────────
+
+// ─── 3. APPLICATIONS ─────────────────────────────────────────
 const applicationSchema = new mongoose.Schema({
     userId:         { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
     jobId:          { type: mongoose.Schema.Types.Mixed, required: true },
@@ -108,10 +107,10 @@ const applicationSchema = new mongoose.Schema({
     skills:         { type: [String], default: [] },
     interviewDate:  { type: String, default: null }
 }, { timestamps: true });
- 
+
 const Application = mongoose.model("Application", applicationSchema);
- 
-// ─── 4. INTERVIEWS ────────────────────────────────────────────────────────────
+
+// ─── 4. INTERVIEWS ───────────────────────────────────────────
 const interviewSchema = new mongoose.Schema({
     applicationId:  { type: mongoose.Schema.Types.ObjectId, ref: "Application", required: true },
     scheduledAt:    { type: Date, required: true },
@@ -120,10 +119,10 @@ const interviewSchema = new mongoose.Schema({
     status:         { type: String, enum: ["Scheduled", "Completed", "Cancelled"], default: "Scheduled" },
     feedback:       { type: String, default: "" }
 }, { timestamps: true });
- 
+
 const Interview = mongoose.model("Interview", interviewSchema);
- 
-// ─── 5. NOTIFICATIONS ────────────────────────────────────────────────────────
+
+// ─── 5. NOTIFICATIONS ────────────────────────────────────────
 const notificationSchema = new mongoose.Schema({
     userId:         { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     message:        { type: String, required: true },
@@ -131,14 +130,14 @@ const notificationSchema = new mongoose.Schema({
     status:         { type: String, enum: ["Sent", "Pending", "Read"], default: "Pending" },
     relatedId:      { type: mongoose.Schema.Types.ObjectId, default: null }
 }, { timestamps: true });
- 
+
 const Notification = mongoose.model("Notification", notificationSchema);
- 
+
 // ==========================
 // 🔥 IN-MEMORY OTP STORE
 // ==========================
 const otpStore = new Map();
- 
+
 // ==========================
 // 🔥 NODEMAILER SETUP
 // ==========================
@@ -149,13 +148,11 @@ const transporter = nodemailer.createTransport({
         pass: process.env.MAIL_PASS || "cmanrfycarjwdymh"
     }
 });
- 
+
 function sendMail(to, subject, text, htmlBody) {
     const mailOptions = {
         from: `HireX <${process.env.MAIL_USER || "hirex78@gmail.com"}>`,
-        to,
-        subject,
-        text,
+        to, subject, text,
         html: htmlBody || undefined
     };
     transporter.sendMail(mailOptions, (err, info) => {
@@ -163,7 +160,7 @@ function sendMail(to, subject, text, htmlBody) {
         else console.log("✅ MAIL SENT:", info.response);
     });
 }
- 
+
 function buildHtml(heading, body) {
     return `
     <div style="font-family:sans-serif;max-width:520px;margin:auto;background:#0f1520;color:#f0eeff;padding:32px;border-radius:12px;">
@@ -174,7 +171,7 @@ function buildHtml(heading, body) {
         <p style="color:#7c7a9a;font-size:12px;">— HireX Team | hirex78@gmail.com</p>
     </div>`;
 }
- 
+
 // ==========================
 // 🔥 NOTIFICATION HELPER
 // ==========================
@@ -186,82 +183,79 @@ async function createNotification(userId, message, type = "General", relatedId =
         console.log("Notification create error:", err.message);
     }
 }
- 
+
 // ==========================
 // 🔥 FILE UPLOAD SETUP
 // ==========================
 if (!fs.existsSync("uploads")) fs.mkdirSync("uploads");
- 
+
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, "uploads/"),
     filename: (req, file, cb) => {
         let ext = path.extname(file.originalname);
-        // FIX: sanitize filename safely
         let baseName = (req.body.name || "resume")
             .replace(/[^a-zA-Z0-9_\-]/g, "_")
             .substring(0, 40);
         cb(null, baseName + "-" + Date.now() + ext);
     }
 });
- 
+
 const upload = multer({
     storage,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+    limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
         if (file.mimetype === "application/pdf") cb(null, true);
         else cb(new Error("Only PDF files allowed ❌"), false);
     }
 });
- 
+
 app.use("/uploads", express.static("uploads"));
- 
+
 // ==========================
 // 🔥 HEALTH CHECK
 // ==========================
 app.get("/", (req, res) => res.send("HireX Backend running ✅"));
- 
+
 // ==========================
 // 🔥 REGISTER — STEP 1: SEND OTP
 // ==========================
 app.post("/register-otp", async (req, res) => {
     try {
         const { firstName, lastName, email, password, contact, city, gender, type, role } = req.body;
- 
+
         if (!firstName || !lastName || !email || !password || !contact || !city)
             return res.json({ message: "All fields are required ❌" });
- 
+
         const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailPattern.test(email))
             return res.json({ message: "Invalid email format ❌" });
- 
+
         if (!gender) return res.json({ message: "Please select gender ❌" });
         if (!role)   return res.json({ message: "Please select role ❌" });
         if (password.length < 6)
             return res.json({ message: "Password must be at least 6 characters ❌" });
- 
+
         const existingUser = await User.findOne({ email: email.toLowerCase() });
         if (existingUser) return res.json({ message: "User already exists ❌" });
- 
+
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const expiresAt = Date.now() + 10 * 60 * 1000;
         const hashedPassword = await bcrypt.hash(password, 10);
- 
-        // Normalise role
-        const normalisedRole = (role === "employer") ? "recruiter" : "applicant";
- 
+
+        // ✅ FIX: Normalise role — employer → recruiter, else → applicant
+        const normalisedRole = (role === "employer" || role === "recruiter") ? "recruiter" : "applicant";
+
         otpStore.set(email.toLowerCase(), {
-            otp,
-            expiresAt,
+            otp, expiresAt,
             userData: {
                 firstName, lastName,
                 email: email.toLowerCase(),
                 password: hashedPassword,
-                contact,
-                city, gender, type,
+                contact, city, gender, type,
                 role: normalisedRole
             }
         });
- 
+
         sendMail(
             email,
             "HireX — Verify Your Email (OTP)",
@@ -275,15 +269,15 @@ app.post("/register-otp", async (req, res) => {
                 <br>Valid for <b>10 minutes</b>. Never share this code with anyone.`
             )
         );
- 
+
         res.json({ message: "OTP sent to your email ✅" });
- 
+
     } catch (err) {
         console.log(err);
         res.status(500).json({ message: "Server error" });
     }
 });
- 
+
 // ==========================
 // 🔥 REGISTER — STEP 2: VERIFY OTP
 // ==========================
@@ -291,24 +285,24 @@ app.post("/verify-otp", async (req, res) => {
     try {
         const { email, otp } = req.body;
         if (!email || !otp) return res.json({ message: "Email and OTP are required ❌" });
- 
+
         const entry = otpStore.get(email.toLowerCase());
         if (!entry) return res.json({ message: "OTP not found. Please register again ❌" });
- 
+
         if (Date.now() > entry.expiresAt) {
             otpStore.delete(email.toLowerCase());
             return res.json({ message: "OTP expired. Please register again ❌" });
         }
- 
+
         if (entry.otp !== otp.trim()) return res.json({ message: "Invalid OTP ❌" });
- 
+
         const newUser = new User({
             ...entry.userData,
             profile: { phone: entry.userData.contact || "" }
         });
         await newUser.save();
         otpStore.delete(email.toLowerCase());
- 
+
         sendMail(
             email,
             "Welcome to HireX 🎉",
@@ -319,15 +313,16 @@ app.post("/verify-otp", async (req, res) => {
                 Your account has been created successfully. You can now log in and start exploring opportunities.`
             )
         );
- 
-        res.json({ message: "Registration successful ✅" });
- 
+
+        // ✅ FIX: Return the role so frontend can redirect correctly after registration
+        res.json({ message: "Registration successful ✅", role: entry.userData.role });
+
     } catch (err) {
         console.log(err);
         res.status(500).json({ message: "Server error" });
     }
 });
- 
+
 // ==========================
 // 🔥 RESEND OTP
 // ==========================
@@ -336,12 +331,12 @@ app.post("/resend-otp", async (req, res) => {
         const { email } = req.body;
         const entry = otpStore.get(email.toLowerCase());
         if (!entry) return res.json({ message: "Session expired. Please register again ❌" });
- 
+
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         entry.otp = otp;
         entry.expiresAt = Date.now() + 10 * 60 * 1000;
         otpStore.set(email.toLowerCase(), entry);
- 
+
         sendMail(email, "HireX — New OTP Code",
             `Your new OTP is: ${otp}. Valid for 10 minutes.`,
             buildHtml("New OTP Code",
@@ -352,66 +347,85 @@ app.post("/resend-otp", async (req, res) => {
                 <br>Valid for <b>10 minutes</b>.`
             )
         );
- 
+
         res.json({ message: "OTP resent ✅" });
     } catch (err) {
         res.status(500).json({ message: "Server error" });
     }
 });
- 
+
 // ==========================
-// 🔥 GOOGLE LOGIN
+// 🔥 GOOGLE LOGIN  ← FIXED
 // ==========================
 app.post("/google-login", async (req, res) => {
     try {
         const { firstName, lastName, email } = req.body;
         if (!email) return res.status(400).json({ message: "Email required" });
- 
+
         let user = await User.findOne({ email: email.toLowerCase() });
         let isNewUser = false;
- 
+
         if (!user) {
+            // Brand-new user — create account
             isNewUser = true;
             user = new User({
-                firstName, lastName,
-                email: email.toLowerCase(),
-                role: "applicant",
-                city: "", gender: ""
+                firstName: firstName || "",
+                lastName:  lastName  || "",
+                email:     email.toLowerCase(),
+                role:      "applicant",
+                city:      "",
+                gender:    ""
             });
             await user.save();
+        } else {
+            // ✅ FIX: Existing Google-only users who never completed their profile
+            // are treated as "new" so they are sent to complete-profile.html
+            const isGoogleAccount  = !user.password || user.password === "";
+            const isProfileMissing = !user.city || !user.gender;
+            if (isGoogleAccount && isProfileMissing) {
+                isNewUser = true;
+            }
         }
- 
-        res.json({ message: "Google login success", user, isNewUser });
+
+        // Never expose password hash to frontend
+        const userObj = user.toObject();
+        delete userObj.password;
+
+        res.json({ message: "Google login success", user: userObj, isNewUser });
     } catch (err) {
         console.log(err);
         res.status(500).json({ message: "Server error" });
     }
 });
- 
+
 // ==========================
-// 🔥 LOGIN
+// 🔥 LOGIN  ← FIXED
 // ==========================
 app.post("/login", async (req, res) => {
     try {
         const { email, password } = req.body;
         if (!email || !password) return res.json({ message: "Email and password required" });
- 
+
         const user = await User.findOne({ email: email.toLowerCase() });
         if (!user) return res.json({ message: "Invalid credentials" });
- 
-        // FIX: handle Google-login users who have no password
+
+        // Google-only accounts have no password
         if (!user.password) return res.json({ message: "Please use Google login for this account" });
- 
+
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.json({ message: "Invalid credentials" });
- 
-        res.json({ message: "Login successful", user });
+
+        // ✅ FIX: Never expose password hash to frontend
+        const userObj = user.toObject();
+        delete userObj.password;
+
+        res.json({ message: "Login successful", user: userObj });
     } catch (err) {
         console.log(err);
         res.status(500).json({ message: "Server error" });
     }
 });
- 
+
 // ==========================
 // 🔥 PROFILE
 // ==========================
@@ -425,12 +439,12 @@ app.get("/profile/:email", async (req, res) => {
         res.json({ error: "Server error" });
     }
 });
- 
+
 app.post("/update-profile", async (req, res) => {
     try {
         const { email, firstName, lastName, contact, city, gender, type, role } = req.body;
         if (!email) return res.json({ error: "Email required" });
- 
+
         const updatedUser = await User.findOneAndUpdate(
             { email: email.toLowerCase() },
             {
@@ -444,7 +458,7 @@ app.post("/update-profile", async (req, res) => {
             },
             { new: true }
         ).select("-password");
- 
+
         if (!updatedUser) return res.json({ error: "User not found" });
         res.json({ message: "Updated successfully", user: updatedUser });
     } catch (err) {
@@ -452,7 +466,7 @@ app.post("/update-profile", async (req, res) => {
         res.json({ error: "Update failed" });
     }
 });
- 
+
 // ==========================
 // 🔥 COMPLETE PROFILE (after Google login / first login)
 // ==========================
@@ -460,18 +474,18 @@ app.post("/complete-profile", async (req, res) => {
     try {
         const { email, contact, city, gender, type, role } = req.body;
         if (!email) return res.json({ error: "Email required" });
- 
-        // FIX: normalise role properly
-        let normalisedRole = role;
-        if (role === "employer") normalisedRole = "employer"; // keep as employer for front-end redirect
-        else if (role === "user") normalisedRole = "user";
- 
+
+        // ✅ FIX: Properly normalise role so routing works on the frontend
+        let normalisedRole = "applicant";
+        if (role === "employer" || role === "recruiter") normalisedRole = "recruiter";
+        else if (role === "applicant" || role === "user") normalisedRole = "applicant";
+
         const updatedUser = await User.findOneAndUpdate(
             { email: email.toLowerCase() },
-            { contact, city, gender, type, role: normalisedRole, "profile.phone": contact },
+            { contact, city, gender, type, role: normalisedRole, "profile.phone": contact || "" },
             { new: true }
         ).select("-password");
- 
+
         if (!updatedUser) return res.json({ error: "User not found" });
         res.json({ message: "Profile saved", user: updatedUser });
     } catch (err) {
@@ -479,7 +493,7 @@ app.post("/complete-profile", async (req, res) => {
         res.json({ error: "Server error" });
     }
 });
- 
+
 // ==========================
 // 🔥 JOBS
 // ==========================
@@ -501,31 +515,28 @@ app.get("/jobs", async (req, res) => {
         res.json({ error: "Failed to fetch jobs" });
     }
 });
- 
+
 app.post("/post-job", async (req, res) => {
     try {
         const { title, company, location, salary, jobType, domain, experience, skills, description, email } = req.body;
- 
+
         if (!title || !company || !location || !salary || !jobType || !domain || !experience || !skills || !description || !email)
             return res.json({ error: "All fields are required" });
- 
-        // FIX: case-insensitive duplicate check
+
         const existingJob = await Job.findOne({
-            title: { $regex: new RegExp(`^${title.trim()}$`, "i") },
-            company: { $regex: new RegExp(`^${company.trim()}$`, "i") },
+            title:    { $regex: new RegExp(`^${title.trim()}$`, "i") },
+            company:  { $regex: new RegExp(`^${company.trim()}$`, "i") },
             postedBy: email.toLowerCase(),
-            status: { $in: ["Open", "active"] }
+            status:   { $in: ["Open", "active"] }
         });
         if (existingJob) return res.json({ error: "Job already posted (active)" });
- 
+
         const skillsArray = skills.split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
-        const recruiter = await User.findOne({ email: email.toLowerCase() }).select("_id");
- 
+        const recruiter   = await User.findOne({ email: email.toLowerCase() }).select("_id");
+
         const newJob = new Job({
             title, company, location, salary, jobType, domain, experience,
-            skills,
-            requiredSkills: skillsArray,
-            description,
+            skills, requiredSkills: skillsArray, description,
             postedBy: email.toLowerCase(),
             postedByUser: recruiter?._id || null,
             status: "Open"
@@ -537,7 +548,7 @@ app.post("/post-job", async (req, res) => {
         res.json({ error: "Server error" });
     }
 });
- 
+
 app.put("/close-job/:id", async (req, res) => {
     try {
         const job = await Job.findByIdAndUpdate(req.params.id, { status: "Closed" }, { new: true });
@@ -547,7 +558,7 @@ app.put("/close-job/:id", async (req, res) => {
         res.json({ error: "Failed to close job" });
     }
 });
- 
+
 // ==========================
 // 🔥 APPLICATIONS
 // ==========================
@@ -559,39 +570,36 @@ app.get("/applications", async (req, res) => {
         res.json({ error: "Failed to fetch applications" });
     }
 });
- 
+
 app.post("/apply-job", upload.single("resume"), async (req, res) => {
     try {
         const { name, email, phone, city, degree, experience, skills, jobId, match } = req.body;
- 
+
         if (!name || !email || !jobId)
             return res.json({ error: "Required fields missing" });
- 
+
         const resumePath = req.file ? req.file.path : "";
- 
-        // Check if job exists and is open
+
         const job = await Job.findById(jobId);
         if (!job) return res.json({ error: "Job not found" });
         if (job.status === "Closed" || job.status === "closed")
             return res.json({ error: "This job is closed" });
- 
-        // Check if position already filled
+
         const alreadyAccepted = await Application.findOne({ jobId, status: "Selected" });
         if (alreadyAccepted) return res.json({ error: "This job position is already filled" });
- 
-        // Check for duplicate application (not rejected)
+
         const existing = await Application.findOne({ email: email.toLowerCase(), jobId });
         if (existing && existing.status !== "Rejected")
             return res.json({ error: "You have already applied for this job" });
- 
+
         let parsedSkills = typeof skills === "string"
             ? skills.replace(/[\[\]"']/g, "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean)
             : (Array.isArray(skills) ? skills : []);
-        let parsedExp = parseInt(experience) || 0;
+        let parsedExp   = parseInt(experience) || 0;
         let parsedMatch = parseFloat(match) || 0;
- 
+
         const applicant = await User.findOne({ email: email.toLowerCase() }).select("_id");
- 
+
         const newApp = new Application({
             userId: applicant?._id || null,
             name, email: email.toLowerCase(), phone, city, degree,
@@ -606,7 +614,7 @@ app.post("/apply-job", upload.single("resume"), async (req, res) => {
             matchScore: parsedMatch
         });
         await newApp.save();
- 
+
         if (applicant?._id) {
             await createNotification(
                 applicant._id,
@@ -615,7 +623,7 @@ app.post("/apply-job", upload.single("resume"), async (req, res) => {
                 newApp._id
             );
         }
- 
+
         sendMail(
             email,
             "Application Received — HireX ✅",
@@ -627,16 +635,15 @@ app.post("/apply-job", upload.single("resume"), async (req, res) => {
                 We will review your profile and get back to you soon.`
             )
         );
- 
+
         res.json({ message: "Application submitted successfully!" });
     } catch (err) {
         console.log(err);
-        // FIX: handle multer errors gracefully
         if (err.code === "LIMIT_FILE_SIZE") return res.json({ error: "Resume file too large (max 5MB)" });
         res.json({ error: "Application submission failed" });
     }
 });
- 
+
 // ==========================
 // 🔥 UPDATE APPLICATION STATUS
 // ==========================
@@ -644,18 +651,18 @@ app.post("/update-status", async (req, res) => {
     try {
         const { appId, status } = req.body;
         if (!appId || !status) return res.json({ error: "appId and status required" });
- 
+
         const validStatuses = ["Applied", "Interview", "Selected", "Rejected", "Screening"];
         if (!validStatuses.includes(status)) return res.json({ error: "Invalid status" });
- 
+
         const updatedApp = await Application.findByIdAndUpdate(appId, { status }, { new: true });
         if (!updatedApp) return res.json({ error: "Application not found" });
- 
+
         const notifType = status === "Selected" ? "Selection"
                         : status === "Interview" ? "Interview"
                         : status === "Rejected"  ? "Rejection"
                         : "Application";
- 
+
         if (updatedApp.userId) {
             const messages = {
                 Selected:  `🎉 Congratulations! You have been selected for a position.`,
@@ -669,7 +676,7 @@ app.post("/update-status", async (req, res) => {
                 updatedApp._id
             );
         }
- 
+
         if (status === "Selected") {
             sendMail(
                 updatedApp.email,
@@ -683,7 +690,7 @@ app.post("/update-status", async (req, res) => {
                 )
             );
         }
- 
+
         if (status === "Rejected") {
             sendMail(
                 updatedApp.email,
@@ -697,14 +704,14 @@ app.post("/update-status", async (req, res) => {
                 )
             );
         }
- 
+
         res.json({ message: "Status updated" });
     } catch (err) {
         console.log(err);
         res.json({ error: "Update failed" });
     }
 });
- 
+
 // ==========================
 // 🔥 SCHEDULE INTERVIEW
 // ==========================
@@ -712,22 +719,21 @@ app.post("/schedule-interview", async (req, res) => {
     try {
         const { appId, interviewDate, mode = "Online", meetingLink = "" } = req.body;
         if (!appId || !interviewDate) return res.json({ error: "appId and interviewDate required" });
- 
+
         const updatedApp = await Application.findByIdAndUpdate(
             appId,
             { status: "Interview", interviewDate },
             { new: true }
         );
         if (!updatedApp) return res.json({ error: "Application not found" });
- 
+
         const interview = await Interview.create({
             applicationId: updatedApp._id,
-            scheduledAt: new Date(interviewDate),
-            mode,
-            meetingLink,
+            scheduledAt:   new Date(interviewDate),
+            mode, meetingLink,
             status: "Scheduled"
         });
- 
+
         if (updatedApp.userId) {
             await createNotification(
                 updatedApp.userId,
@@ -736,7 +742,7 @@ app.post("/schedule-interview", async (req, res) => {
                 updatedApp._id
             );
         }
- 
+
         sendMail(
             updatedApp.email,
             "Interview Scheduled — HireX 📅",
@@ -753,14 +759,14 @@ app.post("/schedule-interview", async (req, res) => {
                 <br><br>Please be prepared and join on time. Good luck! 🎯`
             )
         );
- 
+
         res.json({ message: "Interview scheduled ✅", interview });
     } catch (err) {
         console.log(err);
         res.json({ error: "Interview scheduling failed" });
     }
 });
- 
+
 // ==========================
 // 🔥 INTERVIEWS
 // ==========================
@@ -778,7 +784,7 @@ app.post("/update-interview", async (req, res) => {
         res.json({ error: "Update failed" });
     }
 });
- 
+
 app.get("/interviews/:appId", async (req, res) => {
     try {
         const interviews = await Interview.find({ applicationId: req.params.appId });
@@ -787,7 +793,7 @@ app.get("/interviews/:appId", async (req, res) => {
         res.json({ error: "Failed to fetch interviews" });
     }
 });
- 
+
 // ==========================
 // 🔥 NOTIFICATIONS
 // ==========================
@@ -802,7 +808,7 @@ app.get("/notifications/:userId", async (req, res) => {
         res.json({ error: "Failed to fetch notifications" });
     }
 });
- 
+
 app.post("/notifications/read/:id", async (req, res) => {
     try {
         await Notification.findByIdAndUpdate(req.params.id, { status: "Read" });
@@ -811,7 +817,7 @@ app.post("/notifications/read/:id", async (req, res) => {
         res.json({ error: "Failed to update notification" });
     }
 });
- 
+
 app.post("/notifications/read-all/:userId", async (req, res) => {
     try {
         await Notification.updateMany(
@@ -823,14 +829,14 @@ app.post("/notifications/read-all/:userId", async (req, res) => {
         res.json({ error: "Failed to update notifications" });
     }
 });
- 
+
 // ==========================
 // 🔥 STATS (employer)
 // ==========================
 app.get("/my-stats/:email", async (req, res) => {
     try {
         const email = req.params.email.toLowerCase();
-        const jobs = await Job.find({ postedBy: email });
+        const jobs  = await Job.find({ postedBy: email });
         const jobIds = jobs.map(j => j._id);
         const appCount = await Application.countDocuments({ jobId: { $in: jobIds } });
         res.json({ jobsPosted: jobs.length, applicants: appCount });

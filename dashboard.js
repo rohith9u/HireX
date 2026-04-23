@@ -1,30 +1,48 @@
 // ============================================================
 // dashboard.js — HireX Applicant Dashboard (Fixed)
 // ============================================================
- 
+
 let currentSection = "dashboard";
 let sessionUser = JSON.parse(localStorage.getItem("loggedInUser") || "null");
- 
+
+// ✅ FIX: If no session, go back to login
 if (!sessionUser) {
     window.location.replace("login.html");
 }
- 
+
 let email = (localStorage.getItem("userEmail") || sessionUser?.email || "").trim().toLowerCase();
- 
-// FIX: clean up after apply redirect
+
+// ✅ FIX: If email is missing, save it from user object
+if (!email && sessionUser?.email) {
+    email = sessionUser.email.trim().toLowerCase();
+    localStorage.setItem("userEmail", email);
+}
+
+// ✅ FIX: Google users with incomplete profile → send to complete-profile.html
+// Only runs for Google accounts (no password stored locally)
+(function checkProfileComplete() {
+    if (!sessionUser) return;
+    const isGoogleAccount  = !sessionUser.password || sessionUser.password === "";
+    const isProfileMissing = !sessionUser.city || !sessionUser.gender;
+    if (isGoogleAccount && isProfileMissing) {
+        window.location.replace("complete-profile.html");
+    }
+})();
+
+// Clean up after apply redirect
 let justApplied = localStorage.getItem("justApplied");
 if (justApplied === "true") {
     localStorage.removeItem("justApplied");
     localStorage.removeItem("selectedJobId");
 }
- 
+
 // DEFAULT LOAD
 window.onload = () => {
     showSection("dashboard", false);
     history.pushState({ section: "dashboard" }, "", "");
     loadNotifications();
 };
- 
+
 // ==========================
 // SECTION ROUTER
 // ==========================
@@ -33,13 +51,13 @@ function showSection(section, addToHistory = true) {
         history.pushState({ section }, "", `#${section}`);
     }
     currentSection = section;
- 
+
     const content = document.getElementById("content");
- 
+
     if (section === "dashboard") {
         const user = JSON.parse(localStorage.getItem("loggedInUser"));
         const name = user?.firstName || "User";
- 
+
         content.innerHTML = `
             <div class="stats">
                 <div class="stat-card" onclick="showSection('applications')">
@@ -62,7 +80,7 @@ function showSection(section, addToHistory = true) {
         loadStats();
         loadLatestJobs();
     }
- 
+
     if (section === "jobs") {
         content.innerHTML = `
         <div class="jobs-page">
@@ -105,43 +123,43 @@ function showSection(section, addToHistory = true) {
         </div>`;
         loadJobs();
     }
- 
+
     if (section === "applications") {
         content.innerHTML = `<h2>My Applications</h2><div id="appList"></div>`;
         loadApplications();
     }
- 
+
     if (section === "profile") {
         content.innerHTML = `<h2>Profile</h2><div id="profileBox"></div>`;
         loadProfile();
     }
 }
- 
+
 // Bottom nav navigation
 function navigate(section) {
     showSection(section);
     document.querySelectorAll(".nav-item").forEach(item => item.classList.remove("active"));
     event.currentTarget.classList.add("active");
 }
- 
+
 // Swipe navigation
 let startX = 0, endX = 0;
 document.addEventListener("touchstart", (e) => { startX = e.changedTouches[0].screenX; });
 document.addEventListener("touchend", (e) => { endX = e.changedTouches[0].screenX; handleSwipe(); });
- 
+
 function handleSwipe() {
     const diff = startX - endX;
     if (Math.abs(diff) < 50) return;
- 
+
     const sections = ["dashboard", "jobs", "applications", "profile"];
     const activeSpan = document.querySelector(".nav-item.active span");
     if (!activeSpan) return;
- 
+
     const currentIndex = sections.findIndex(s => activeSpan.innerText.toLowerCase().includes(s === "applications" ? "app" : s));
     if (diff > 0 && currentIndex < sections.length - 1) navigate(sections[currentIndex + 1]);
     else if (diff < 0 && currentIndex > 0) navigate(sections[currentIndex - 1]);
 }
- 
+
 // Back button
 window.onpopstate = function () {
     if (currentSection !== "dashboard") {
@@ -156,23 +174,23 @@ window.onpopstate = function () {
         }
     }
 };
- 
+
 // ==========================
 // LATEST JOBS (Dashboard)
 // ==========================
 async function loadLatestJobs() {
     try {
-        const res = await fetch("https://hirex-backend-sio8.onrender.com/jobs");
+        const res  = await fetch("https://hirex-backend-sio8.onrender.com/jobs");
         const jobs = await res.json();
         const container = document.getElementById("latestJobs");
         if (!container) return;
         container.innerHTML = "";
- 
+
         const latestJobs = jobs
             .filter(j => (j.status || "").toLowerCase() !== "closed")
             .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
             .slice(0, 4);
- 
+
         latestJobs.forEach(job => {
             const div = document.createElement("div");
             div.className = "job-card-premium";
@@ -193,7 +211,7 @@ async function loadLatestJobs() {
         console.log("Error loading jobs:", err);
     }
 }
- 
+
 // ==========================
 // STATS
 // ==========================
@@ -219,7 +237,7 @@ function loadStats() {
     })
     .catch(err => console.log("Stats error:", err));
 }
- 
+
 // ==========================
 // JOBS
 // ==========================
@@ -227,7 +245,7 @@ function extractSalary(value) {
     if (!value) return 0;
     return Number(value.toString().replace(/[^\d]/g, ""));
 }
- 
+
 function loadJobs() {
     Promise.all([
         fetch("https://hirex-backend-sio8.onrender.com/jobs").then(res => res.json()),
@@ -237,9 +255,9 @@ function loadJobs() {
         const container = document.getElementById("jobList");
         if (!container) return;
         container.innerHTML = "";
- 
+
         let filteredJobs = jobs;
- 
+
         if (window.activeFilters) {
             const f = window.activeFilters;
             filteredJobs = jobs.filter(job => {
@@ -249,25 +267,24 @@ function loadJobs() {
                 if (f.company && !(job.company || "").toLowerCase().includes(f.company.toLowerCase())) return false;
                 return true;
             });
- 
+
             if (f.sort === "latest") filteredJobs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
             else if (f.sort === "salaryHigh") filteredJobs.sort((a, b) => extractSalary(b.salary) - extractSalary(a.salary));
-            else if (f.sort === "salaryLow") filteredJobs.sort((a, b) => extractSalary(a.salary) - extractSalary(b.salary));
+            else if (f.sort === "salaryLow")  filteredJobs.sort((a, b) => extractSalary(a.salary) - extractSalary(b.salary));
         }
- 
+
         if (filteredJobs.length === 0) {
             container.innerHTML = `<p style="color:#94a3b8; padding:20px 0;">No jobs found matching your filters.</p>`;
             return;
         }
- 
+
         filteredJobs.forEach(job => {
-            const jobApplications = apps.filter(app => String(app.jobId) === String(job._id));
-            const userApps = apps.filter(app => String(app.jobId) === String(job._id) && app.email === email);
+            const userApps     = apps.filter(app => String(app.jobId) === String(job._id) && app.email === email);
             const alreadyApplied = userApps.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
- 
+
             const currentStatus = (job.status || "").toLowerCase().trim();
             let applyBtn = "";
- 
+
             if (currentStatus === "closed") {
                 applyBtn = `<button disabled class="closed-btn">Closed</button>`;
             } else if (alreadyApplied && alreadyApplied.status && alreadyApplied.status.toLowerCase() !== "rejected") {
@@ -277,7 +294,7 @@ function loadJobs() {
             } else {
                 applyBtn = `<button class="apply-btn small-apply" onclick="goToApply('${job._id}')">Apply Now</button>`;
             }
- 
+
             const div = document.createElement("div");
             div.className = "job-card-premium";
             div.innerHTML = `
@@ -298,7 +315,7 @@ function loadJobs() {
     })
     .catch(err => console.log("Error loading jobs:", err));
 }
- 
+
 function viewJob(jobId) {
     Promise.all([
         fetch("https://hirex-backend-sio8.onrender.com/jobs").then(res => res.json()),
@@ -309,10 +326,10 @@ function viewJob(jobId) {
         if (!job) return;
         const container = document.getElementById("jobList");
         if (!container) return;
- 
+
         const alreadyApplied = apps.find(app => String(app.jobId) === String(jobId) && app.email === email);
-        const currentStatus = (job.status || "").toLowerCase();
- 
+        const currentStatus  = (job.status || "").toLowerCase();
+
         let applyBtn = "";
         if (currentStatus === "closed") {
             applyBtn = `<button disabled class="closed-btn">Closed</button>`;
@@ -323,7 +340,7 @@ function viewJob(jobId) {
         } else {
             applyBtn = `<button class="apply-btn small-apply" onclick="goToApply('${job._id}')">Apply Now</button>`;
         }
- 
+
         container.innerHTML = `
         <div style="max-width:700px;margin:30px auto;background:linear-gradient(145deg,#1e293b,#0f172a);
             padding:25px;border-radius:14px;border:1px solid #1e293b;
@@ -346,23 +363,23 @@ function viewJob(jobId) {
     })
     .catch(err => console.log("Error:", err));
 }
- 
+
 function goToApply(jobId) {
     localStorage.setItem("selectedJobId", jobId);
     window.location.href = "apply.html";
 }
- 
+
 function applyFilters() {
     window.activeFilters = {
-        domain: document.getElementById("filterDomain").value,
-        type: document.getElementById("filterType").value,
-        salary: document.getElementById("filterSalary").value,
+        domain:  document.getElementById("filterDomain").value,
+        type:    document.getElementById("filterType").value,
+        salary:  document.getElementById("filterSalary").value,
         company: document.getElementById("filterCompany").value,
-        sort: document.getElementById("sortBy").value
+        sort:    document.getElementById("sortBy").value
     };
     loadJobs();
 }
- 
+
 // ==========================
 // APPLICATIONS
 // ==========================
@@ -375,32 +392,32 @@ function loadApplications() {
         const container = document.getElementById("appList");
         if (!container) return;
         container.innerHTML = "";
- 
+
         const myApps = apps.filter(app => app.email === email);
- 
+
         const priority = { "Interview": 1, "Applied": 2, "Selected": 3, "Rejected": 4 };
         myApps.sort((a, b) => (priority[a.status] || 5) - (priority[b.status] || 5));
- 
+
         if (myApps.length === 0) {
             container.innerHTML = `<p style="color:#94a3b8;padding:20px 0;">No applications yet. Start exploring jobs!</p>`;
             return;
         }
- 
+
         const highlightId = localStorage.getItem("highlightJobId");
- 
+
         myApps.forEach(app => {
-            const job = jobs.find(j => String(j._id) === String(app.jobId));
+            const job         = jobs.find(j => String(j._id) === String(app.jobId));
             const statusClass = (app.status || "applied").toLowerCase();
             const isHighlight = highlightId && String(app.jobId) === highlightId;
- 
+
             const div = document.createElement("div");
             div.className = "app-card" + (isHighlight ? " highlight-job" : "");
             div.setAttribute("data-id", String(app.jobId));
- 
+
             const resumeURL = app.resume
                 ? `https://hirex-backend-sio8.onrender.com/${app.resume.startsWith("uploads/") ? app.resume : "uploads/" + app.resume}`
                 : "";
- 
+
             div.innerHTML = `
                 <div class="app-header">
                     <h3>${job ? job.title : "Job no longer available"}</h3>
@@ -416,7 +433,7 @@ function loadApplications() {
             `;
             container.appendChild(div);
         });
- 
+
         // Scroll to highlighted card
         setTimeout(() => {
             if (!highlightId) return;
@@ -431,29 +448,30 @@ function loadApplications() {
     })
     .catch(err => console.log("Error loading applications:", err));
 }
- 
+
 // ==========================
 // PROFILE
 // ==========================
 function loadProfile() {
-    const profileEmail = localStorage.getItem("userEmail");
+    // ✅ FIX: Use email from both sources
+    const profileEmail = localStorage.getItem("userEmail") || sessionUser?.email;
     if (!profileEmail) {
         const box = document.getElementById("profileBox");
         if (box) box.innerHTML = "No user logged in";
         return;
     }
- 
+
     fetch(`https://hirex-backend-sio8.onrender.com/profile/${profileEmail}`)
     .then(res => res.json())
     .then(user => {
         const container = document.getElementById("profileBox");
         if (!container) return;
         if (user.error) { container.innerHTML = "User not found"; return; }
- 
+
         const imgSrc = user.profileImage
             ? `https://hirex-backend-sio8.onrender.com/images/${user.profileImage}`
             : "images/profile.png";
- 
+
         container.innerHTML = `
         <div class="profile-wrapper">
             <div class="profile-header">
@@ -483,29 +501,29 @@ function loadProfile() {
             <button id="saveBtn" class="save-btn" onclick="saveProfile()" style="display:none;">Save Changes</button>
         </div>`;
     })
-    .catch(err => {
+    .catch(() => {
         const box = document.getElementById("profileBox");
         if (box) box.innerHTML = "Error loading profile";
     });
 }
- 
+
 function toggleEdit() {
     document.querySelectorAll(".profile-form input:not(#role)").forEach(input => input.disabled = false);
     convertToSelect("type", [
-        { value: "Fresher", text: "Fresher" },
-        { value: "School Student", text: "School Student" },
-        { value: "Professional", text: "Professional" },
+        { value: "Fresher",         text: "Fresher" },
+        { value: "School Student",  text: "School Student" },
+        { value: "Professional",    text: "Professional" },
         { value: "College Student", text: "College Student" }
     ]);
     convertToSelect("gender", [
-        { value: "Male", text: "Male" },
+        { value: "Male",   text: "Male" },
         { value: "Female", text: "Female" },
-        { value: "Other", text: "Other" }
+        { value: "Other",  text: "Other" }
     ]);
     const saveBtn = document.getElementById("saveBtn");
     if (saveBtn) saveBtn.style.display = "block";
 }
- 
+
 function convertToSelect(id, options) {
     const input = document.getElementById(id);
     if (!input || input.tagName === "SELECT") return;
@@ -522,7 +540,7 @@ function convertToSelect(id, options) {
     select.value = currentValue;
     input.parentNode.replaceChild(select, input);
 }
- 
+
 function saveProfile() {
     const user = JSON.parse(localStorage.getItem("loggedInUser"));
     if (!user || !user.email) {
@@ -530,27 +548,27 @@ function saveProfile() {
         setTimeout(() => window.location.href = "index.html", 1500);
         return;
     }
- 
+
     const contact = document.getElementById("contact").value.trim();
     if (!/^[0-9]{10}$/.test(contact)) {
         showToast("Enter valid 10-digit phone number ❌", "error");
         return;
     }
- 
+
     const data = {
-        email: user.email,
+        email:     user.email,
         firstName: document.getElementById("firstName").value.trim(),
-        lastName: document.getElementById("lastName").value.trim(),
+        lastName:  document.getElementById("lastName").value.trim(),
         contact,
-        city: document.getElementById("city").value.trim(),
-        gender: document.getElementById("gender").value,
-        type: document.getElementById("type").value
+        city:      document.getElementById("city").value.trim(),
+        gender:    document.getElementById("gender").value,
+        type:      document.getElementById("type").value
     };
- 
+
     fetch("https://hirex-backend-sio8.onrender.com/update-profile", {
-        method: "POST",
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
+        body:    JSON.stringify(data)
     })
     .then(res => res.json())
     .then(result => {
@@ -562,7 +580,7 @@ function saveProfile() {
     })
     .catch(() => showToast("Failed to update profile. Try again.", "error"));
 }
- 
+
 // ==========================
 // NOTIFICATIONS
 // ==========================
@@ -572,34 +590,34 @@ function loadNotifications() {
         fetch("https://hirex-backend-sio8.onrender.com/applications").then(res => res.json())
     ])
     .then(([jobs, apps]) => {
-        const notifDot = document.getElementById("notifDot");
+        const notifDot  = document.getElementById("notifDot");
         const notifList = document.getElementById("notifList");
         if (!notifDot || !notifList) return;
- 
+
         const myUpdates = apps
             .filter(app => app.email === email && (app.status === "Selected" || app.status === "Interview"))
             .sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt));
- 
+
         notifDot.style.display = myUpdates.length > 0 ? "block" : "none";
         notifList.innerHTML = "";
- 
+
         if (myUpdates.length === 0) {
             notifList.innerHTML = `<p style="color:#94a3b8;font-size:13px;">No notifications</p>`;
             return;
         }
- 
+
         myUpdates.forEach(app => {
             const job = jobs.find(j => String(j._id) === String(app.jobId));
             const div = document.createElement("div");
             div.className = "notif-item";
- 
+
             if (app.status === "Interview") {
                 div.innerHTML = `🗓️ Interview scheduled for <b>${job ? job.title : "a job"}</b><br>
                     <small>${app.interviewDate ? new Date(app.interviewDate).toLocaleString() : "Time TBD"}</small>`;
             } else {
                 div.innerHTML = `🎉 You are selected for <b>${job ? job.title : "a job"}</b>`;
             }
- 
+
             div.onclick = () => {
                 localStorage.setItem("highlightJobId", String(app.jobId));
                 document.getElementById("notifBox").style.display = "none";
@@ -610,7 +628,7 @@ function loadNotifications() {
     })
     .catch(err => console.log("Notification error:", err));
 }
- 
+
 function toggleNotif() {
     const box = document.getElementById("notifBox");
     const dot = document.getElementById("notifDot");
@@ -618,16 +636,16 @@ function toggleNotif() {
     box.style.display = box.style.display === "block" ? "none" : "block";
     if (dot) dot.style.display = "none";
 }
- 
+
 // Close notif box when clicking outside
 document.addEventListener("click", (e) => {
-    const box = document.getElementById("notifBox");
+    const box  = document.getElementById("notifBox");
     const icon = e.target.closest(".notif-wrapper");
     if (!icon && box && box.style.display === "block") {
         box.style.display = "none";
     }
 });
- 
+
 // ==========================
 // OPEN JOB FROM DASHBOARD
 // ==========================
@@ -642,7 +660,7 @@ function openJobFromDashboard(jobId) {
     });
     observer.observe(document.getElementById("content"), { childList: true, subtree: true });
 }
- 
+
 // ==========================
 // TOAST
 // ==========================
@@ -654,7 +672,7 @@ function showToast(message, type = "success") {
     if (type === "error") toast.classList.add("error");
     setTimeout(() => toast.className = "", 3000);
 }
- 
+
 // ==========================
 // LOGOUT
 // ==========================

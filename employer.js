@@ -1,29 +1,44 @@
 // ============================================================
 // employer.js — HireX Recruiter Dashboard (Fixed)
 // ============================================================
- 
+
 let currentSection = "dashboard";
 history.pushState({ page: "dashboard" }, "", "");
- 
+
 // 🔐 ACCESS CONTROL
 let sessionUser = JSON.parse(localStorage.getItem("loggedInUser") || "null");
 if (!sessionUser) {
     showToast("Access Denied!", "error");
     setTimeout(() => window.location.href = "login.html", 1500);
 }
- 
+
 let email = (localStorage.getItem("userEmail") || sessionUser?.email || "").trim().toLowerCase();
- 
+
+// ✅ FIX: If email is missing from localStorage, restore it
+if (!email && sessionUser?.email) {
+    email = sessionUser.email.trim().toLowerCase();
+    localStorage.setItem("userEmail", email);
+}
+
+// ✅ FIX: If a non-recruiter somehow lands here, redirect them away
+(function checkRole() {
+    if (!sessionUser) return;
+    const role = (sessionUser.role || "").toLowerCase();
+    if (role !== "recruiter" && role !== "employer") {
+        window.location.replace("dashboard.html");
+    }
+})();
+
 // ==========================
 // 🔥 START SYSTEM
 // ==========================
 showSection("dashboard", false);
 history.pushState({ section: "dashboard" }, "", "");
- 
+
 let lastAppCount = Number(localStorage.getItem("lastAppCount")) || 0;
 checkNewApplicants();
-setInterval(checkNewApplicants, 8000); // FIX: 8s to reduce API hammering
- 
+setInterval(checkNewApplicants, 8000);
+
 // ==========================
 // 🔔 CHECK NEW APPLICANTS
 // ==========================
@@ -33,26 +48,26 @@ function checkNewApplicants() {
         fetch("https://hirex-backend-sio8.onrender.com/jobs").then(r => r.json())
     ])
     .then(([apps, jobs]) => {
-        const myJobs = jobs.filter(j => (j.postedBy || "").toLowerCase() === email);
+        const myJobs   = jobs.filter(j => (j.postedBy || "").toLowerCase() === email);
         const myJobIds = myJobs.map(j => String(j._id));
-        const myApps = apps.filter(app =>
+        const myApps   = apps.filter(app =>
             myJobIds.includes(String(app.jobId)) &&
             app.status !== "Selected" && app.status !== "Rejected"
         );
- 
+
         if (myApps.length > lastAppCount) {
             const newCount = myApps.length - lastAppCount;
             showToast(`${newCount} New Applicant(s)! 🎉`);
             updateNotificationUI(myApps.slice(-newCount));
             updateNotificationCount(newCount);
         }
- 
+
         lastAppCount = myApps.length;
         localStorage.setItem("lastAppCount", lastAppCount);
     })
     .catch(err => console.log("Notification Error:", err));
 }
- 
+
 // ==========================
 // 🔴 NOTIFICATION COUNT
 // ==========================
@@ -63,7 +78,7 @@ function updateNotificationCount(count) {
     badge.innerText = current + count;
     badge.style.display = "inline-block";
 }
- 
+
 // ==========================
 // 🔔 TOGGLE NOTIFICATION PANEL
 // ==========================
@@ -72,15 +87,15 @@ function toggleNotif() {
     if (!box) return;
     box.classList.toggle("show");
 }
- 
+
 document.addEventListener("click", (e) => {
-    const box = document.getElementById("notifBox");
+    const box  = document.getElementById("notifBox");
     const icon = e.target.closest(".notif-wrapper");
     if (!icon && box && box.classList.contains("show")) {
         box.classList.remove("show");
     }
 });
- 
+
 function updateNotificationUI(newApps) {
     const content = document.getElementById("notifContent");
     if (!content) return;
@@ -93,7 +108,7 @@ function updateNotificationUI(newApps) {
     const emptyMsg = content.querySelector(".empty-msg");
     if (emptyMsg) emptyMsg.remove();
 }
- 
+
 // ==========================
 // 🔥 BACK BUTTON
 // ==========================
@@ -110,28 +125,27 @@ window.addEventListener("popstate", function () {
         }
     }
 });
- 
+
 // ==========================
 // 🔥 SECTION SWITCHING
 // ==========================
 function showSection(section, addToHistory = true) {
     if (addToHistory) history.pushState({ section }, "", "");
     currentSection = section;
- 
-    // Update bottom nav active state
+
     document.querySelectorAll(".bottom-nav .nav-item").forEach(item => item.classList.remove("active"));
-    const map = { dashboard: 0, jobs: 1, post: 2, applicants: 3, profile: 4 };
+    const map   = { dashboard: 0, jobs: 1, post: 2, applicants: 3, profile: 4 };
     const items = document.querySelectorAll(".bottom-nav .nav-item");
     if (items[map[section]] !== undefined) items[map[section]].classList.add("active");
- 
+
     const content = document.getElementById("content");
     if (!content) return;
- 
+
     // 📊 DASHBOARD
     if (section === "dashboard") {
         const user = JSON.parse(localStorage.getItem("loggedInUser"));
         const name = user?.firstName || "Employer";
- 
+
         content.innerHTML = `
             <div class="stats">
                 <div class="stat-card" onclick="showSection('jobs')">
@@ -149,7 +163,7 @@ function showSection(section, addToHistory = true) {
         loadStats();
         loadDashboardApplicants();
     }
- 
+
     // ➕ POST JOB
     if (section === "post") {
         content.innerHTML = `
@@ -186,13 +200,13 @@ function showSection(section, addToHistory = true) {
             <p id="jobMessage"></p>
         </div>`;
     }
- 
+
     // 💼 MY JOBS
     if (section === "jobs") {
         content.innerHTML = `<h2>My Jobs</h2><div id="jobList"></div>`;
         loadMyJobs();
     }
- 
+
     // 📄 APPLICANTS
     if (section === "applicants") {
         content.innerHTML = `
@@ -203,14 +217,14 @@ function showSection(section, addToHistory = true) {
         `;
         loadApplicants();
     }
- 
+
     // 👤 PROFILE
     if (section === "profile") {
         content.innerHTML = `<h2>Profile</h2><div id="profileBox"></div>`;
         loadProfile();
     }
 }
- 
+
 // ==========================
 // 🔥 DASHBOARD APPLICANTS
 // ==========================
@@ -220,29 +234,29 @@ function loadDashboardApplicants() {
         fetch("https://hirex-backend-sio8.onrender.com/applications").then(res => res.json())
     ])
     .then(([jobs, apps]) => {
-        const myJobs = jobs.filter(j => (j.postedBy || "").toLowerCase() === email);
+        const myJobs   = jobs.filter(j => (j.postedBy || "").toLowerCase() === email);
         const myJobIds = myJobs.map(j => String(j._id));
- 
+
         const pendingApps = apps
             .filter(app => myJobIds.includes(String(app.jobId)) && app.status !== "Selected" && app.status !== "Rejected")
             .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
- 
+
         const container = document.getElementById("dashboardApplicants");
         if (!container) return;
- 
+
         let html = `<h3 style="margin-bottom:14px;">Incoming Applications</h3><div class="app-grid">`;
- 
+
         if (pendingApps.length === 0) {
             html += `<p style="color:#94a3b8;">No new applicants</p>`;
         } else {
             pendingApps.slice(0, 4).forEach(app => {
-                const job = jobs.find(j => String(j._id) === String(app.jobId));
+                const job       = jobs.find(j => String(j._id) === String(app.jobId));
                 const jobSkills = (job?.skills || "").toLowerCase().split(",").map(s => s.trim());
                 const userSkills = (app.skills || []).map(s => s.toLowerCase());
-                const matched = jobSkills.filter(s => userSkills.includes(s));
-                const missing = jobSkills.filter(s => !userSkills.includes(s));
-                const matchPct = Number(app.match || 0);
- 
+                const matched   = jobSkills.filter(s => userSkills.includes(s));
+                const missing   = jobSkills.filter(s => !userSkills.includes(s));
+                const matchPct  = Number(app.match || 0);
+
                 html += `
                 <div class="app-card-mini" style="background:#0f172a;border:1px solid #1e293b;
                     border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px;">
@@ -274,18 +288,18 @@ function loadDashboardApplicants() {
                 </div>`;
             });
         }
- 
+
         html += `</div>`;
         container.innerHTML = html;
     })
     .catch(err => console.log("Dashboard applicants error:", err));
 }
- 
+
 function goToApplicant(jobId, appId) {
     localStorage.setItem("highlightApplicantId", appId);
     showSection("applicants");
 }
- 
+
 // ==========================
 // 🔥 LOAD STATS
 // ==========================
@@ -298,10 +312,10 @@ function loadStats() {
         const myJobs = jobs.filter(j =>
             (j.postedBy || "").toLowerCase() === email && (j.status || "").toLowerCase() !== "closed"
         );
-        const myJobIds = myJobs.map(j => String(j._id));
-        const myApps = apps.filter(app => myJobIds.includes(String(app.jobId)));
+        const myJobIds    = myJobs.map(j => String(j._id));
+        const myApps      = apps.filter(app => myJobIds.includes(String(app.jobId)));
         const pendingApps = myApps.filter(app => app.status !== "Selected" && app.status !== "Rejected");
- 
+
         const jobCountEl = document.getElementById("jobCount");
         const appCountEl = document.getElementById("appCount");
         if (jobCountEl) jobCountEl.innerText = myJobs.length;
@@ -309,7 +323,7 @@ function loadStats() {
     })
     .catch(err => console.log("Stats error:", err));
 }
- 
+
 // ==========================
 // 🔥 LOAD MY JOBS
 // ==========================
@@ -322,18 +336,18 @@ function loadMyJobs() {
         const container = document.getElementById("jobList");
         if (!container) return;
         container.innerHTML = "";
- 
+
         const myJobs = jobs.filter(j => (j.postedBy || "").toLowerCase() === email);
- 
+
         if (myJobs.length === 0) {
             container.innerHTML = `<p style="color:#94a3b8;">No jobs posted yet. <a onclick="showSection('post')" style="color:#a78bfa;cursor:pointer;">Post one now!</a></p>`;
             return;
         }
- 
+
         myJobs.forEach(job => {
             const jobApplications = apps.filter(app => String(app.jobId) === String(job._id));
             const isClosed = (job.status || "").toLowerCase() === "closed";
- 
+
             const div = document.createElement("div");
             div.className = "job-card-premium";
             div.innerHTML = `
@@ -363,7 +377,7 @@ function loadMyJobs() {
     })
     .catch(err => console.log("Error loading jobs:", err));
 }
- 
+
 // ==========================
 // 🔥 LOAD APPLICANTS
 // ==========================
@@ -374,29 +388,29 @@ function loadApplicants() {
     ])
     .then(([jobs, apps]) => {
         const highlightId = localStorage.getItem("highlightApplicantId");
-        const container = document.getElementById("appList");
+        const container   = document.getElementById("appList");
         if (!container) return;
         container.innerHTML = "";
- 
-        const myJobs = jobs.filter(j => (j.postedBy || "").toLowerCase() === email);
+
+        const myJobs   = jobs.filter(j => (j.postedBy || "").toLowerCase() === email);
         const myJobIds = myJobs.map(j => String(j._id));
- 
+
         const searchInput = (document.getElementById("appSearch")?.value || "").toLowerCase().trim();
- 
+
         let myApplicants = apps.filter(app => {
             if (!myJobIds.includes(String(app.jobId))) return false;
             if (!searchInput) return true;
             const job = jobs.find(j => String(j._id) === String(app.jobId));
             return job && (job.title || "").toLowerCase().includes(searchInput);
         });
- 
+
         myApplicants.sort((a, b) => {
             const getPriority = (s) => s === "Applied" || s === "Screening" || s === "Interview" ? 1 : s === "Selected" ? 2 : 3;
             const diff = getPriority(a.status) - getPriority(b.status);
             if (diff !== 0) return diff;
             return Number(b.match || 0) - Number(a.match || 0);
         });
- 
+
         if (myApplicants.length === 0) {
             container.innerHTML = `
                 <div style="text-align:center;padding:40px;color:#94a3b8;">
@@ -405,32 +419,32 @@ function loadApplicants() {
                 </div>`;
             return;
         }
- 
+
         const grid = document.createElement("div");
         grid.style.cssText = "display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-top:12px;";
         container.appendChild(grid);
- 
+
         myApplicants.forEach(app => {
-            const job = jobs.find(j => String(j._id) === String(app.jobId));
-            const div = document.createElement("div");
+            const job  = jobs.find(j => String(j._id) === String(app.jobId));
+            const div  = document.createElement("div");
             div.className = "app-card";
             div.style.cssText = `background:#0f172a;border:1px solid #1e293b;border-radius:16px;padding:18px;
                 display:flex;flex-direction:column;gap:10px;transition:transform 0.2s,box-shadow 0.2s;`;
- 
+
             div.onmouseenter = () => { div.style.transform = "translateY(-2px)"; div.style.boxShadow = "0 8px 24px rgba(99,102,241,0.15)"; };
             div.onmouseleave = () => { div.style.transform = ""; div.style.boxShadow = ""; };
- 
+
             if (highlightId && String(app._id) === highlightId) {
                 div.style.border = "1px solid #6366f1";
                 div.classList.add("highlight-app");
             }
- 
-            const jobSkills = (job?.skills || "").toLowerCase().split(",").map(s => s.trim()).filter(Boolean);
+
+            const jobSkills  = (job?.skills || "").toLowerCase().split(",").map(s => s.trim()).filter(Boolean);
             const userSkills = Array.isArray(app.skills) ? app.skills.map(s => s.toLowerCase()) : [];
-            const matched = jobSkills.filter(s => userSkills.includes(s));
-            const missing = jobSkills.filter(s => !userSkills.includes(s));
-            const matchPct = Number(app.match || 0);
- 
+            const matched    = jobSkills.filter(s => userSkills.includes(s));
+            const missing    = jobSkills.filter(s => !userSkills.includes(s));
+            const matchPct   = Number(app.match || 0);
+
             const statusColors = {
                 applied:   { bg: "#1e3a5f", color: "#60a5fa" },
                 screening: { bg: "#1e3a2f", color: "#34d399" },
@@ -439,7 +453,7 @@ function loadApplicants() {
                 rejected:  { bg: "#450a0a", color: "#fca5a5" }
             };
             const sc = statusColors[(app.status || "").toLowerCase()] || { bg: "#1e293b", color: "#94a3b8" };
- 
+
             let buttons = "";
             if (app.status === "Selected") {
                 buttons = `<button disabled class="accepted-btn" style="opacity:0.8;">✔ Selected</button>`;
@@ -456,14 +470,13 @@ function loadApplicants() {
                     <button class="reject-btn" onclick="updateStatus('${app._id}','Rejected')">✘ Reject</button>
                 `;
             }
- 
-            // FIX: correct resume URL handling
+
             let resumeURL = "";
             if (app.resume) {
                 const p = app.resume.startsWith("uploads/") ? app.resume : `uploads/${app.resume}`;
                 resumeURL = `https://hirex-backend-sio8.onrender.com/${p}`;
             }
- 
+
             div.innerHTML = `
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
                     <div style="display:flex;align-items:center;gap:10px;">
@@ -519,7 +532,7 @@ function loadApplicants() {
             `;
             grid.appendChild(div);
         });
- 
+
         // Scroll to highlighted applicant
         setTimeout(() => {
             const el = document.querySelector(".highlight-app");
@@ -531,15 +544,15 @@ function loadApplicants() {
     })
     .catch(err => console.log("Applicants error:", err));
 }
- 
+
 // ==========================
 // 🔥 UPDATE STATUS
 // ==========================
 window.updateStatus = function (appId, status) {
     fetch("https://hirex-backend-sio8.onrender.com/update-status", {
-        method: "POST",
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ appId, status })
+        body:    JSON.stringify({ appId, status })
     })
     .then(res => res.json())
     .then(data => {
@@ -549,7 +562,7 @@ window.updateStatus = function (appId, status) {
     })
     .catch(() => showToast("Failed to update status", "error"));
 };
- 
+
 // ==========================
 // 🔥 CLOSE JOB
 // ==========================
@@ -564,41 +577,41 @@ function closeJob(jobId) {
     })
     .catch(() => showToast("Failed to close job", "error"));
 }
- 
+
 // ==========================
 // 🔥 POST JOB
 // ==========================
 function postJob() {
-    const title = document.getElementById("title").value.trim();
-    const company = document.getElementById("company").value.trim();
-    const location = document.getElementById("location").value.trim();
-    const salary = document.getElementById("salary").value.trim();
-    const domain = document.getElementById("domain").value;
-    const jobType = document.getElementById("jobType").value;
-    const experience = document.getElementById("experience").value.trim();
-    const skills = document.getElementById("skills").value.trim();
+    const title       = document.getElementById("title").value.trim();
+    const company     = document.getElementById("company").value.trim();
+    const location    = document.getElementById("location").value.trim();
+    const salary      = document.getElementById("salary").value.trim();
+    const domain      = document.getElementById("domain").value;
+    const jobType     = document.getElementById("jobType").value;
+    const experience  = document.getElementById("experience").value.trim();
+    const skills      = document.getElementById("skills").value.trim();
     const description = document.getElementById("description").value.trim();
-    const message = document.getElementById("jobMessage");
- 
+    const message     = document.getElementById("jobMessage");
+
     if (!title || !company || !location || !salary || !jobType || !domain || !experience || !skills || !description) {
         message.style.color = "red";
         message.innerText = "Please fill all fields!";
         return;
     }
- 
+
     if (!email) {
         message.style.color = "red";
         message.innerText = "Session expired. Please login again.";
         setTimeout(() => window.location.href = "login.html", 1500);
         return;
     }
- 
+
     const normalizedSkills = skills.split(",").map(s => s.trim().toLowerCase()).join(",");
- 
+
     fetch("https://hirex-backend-sio8.onrender.com/post-job", {
-        method: "POST",
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, company, location, salary, domain, jobType, experience, skills: normalizedSkills, description, email, status: "active" })
+        body:    JSON.stringify({ title, company, location, salary, domain, jobType, experience, skills: normalizedSkills, description, email, status: "active" })
     })
     .then(res => res.json())
     .then(data => {
@@ -609,31 +622,32 @@ function postJob() {
             const el = document.getElementById(id);
             if (el) el.value = "";
         });
-        document.getElementById("domain").value = "";
-        document.getElementById("jobType").value = "";
+        document.getElementById("domain").value   = "";
+        document.getElementById("jobType").value  = "";
         setTimeout(() => showSection("jobs"), 1000);
     })
     .catch(() => { message.style.color = "red"; message.innerText = "Error posting job. Try again."; });
 }
- 
+
 // ==========================
 // 🔥 PROFILE
 // ==========================
 function loadProfile() {
-    const profileEmail = localStorage.getItem("userEmail");
+    // ✅ FIX: Use email from both sources
+    const profileEmail = localStorage.getItem("userEmail") || sessionUser?.email;
     if (!profileEmail) { document.getElementById("profileBox").innerHTML = "No user logged in"; return; }
- 
+
     fetch(`https://hirex-backend-sio8.onrender.com/profile/${profileEmail}`)
     .then(res => res.json())
     .then(user => {
         const container = document.getElementById("profileBox");
         if (!container) return;
         if (user.error) { container.innerHTML = "User not found"; return; }
- 
+
         const imgSrc = user.profileImage
             ? `https://hirex-backend-sio8.onrender.com/images/${user.profileImage}`
             : "images/profile.png";
- 
+
         container.innerHTML = `
         <div class="profile-wrapper">
             <div class="profile-header">
@@ -664,24 +678,24 @@ function loadProfile() {
     })
     .catch(() => { document.getElementById("profileBox").innerHTML = "Error loading profile"; });
 }
- 
+
 function toggleEdit() {
     document.querySelectorAll(".profile-form input:not(#role)").forEach(input => input.disabled = false);
     convertToSelect("type", [
-        { value: "Fresher", text: "Fresher" },
-        { value: "School Student", text: "School Student" },
-        { value: "Professional", text: "Professional" },
+        { value: "Fresher",         text: "Fresher" },
+        { value: "School Student",  text: "School Student" },
+        { value: "Professional",    text: "Professional" },
         { value: "College Student", text: "College Student" }
     ]);
     convertToSelect("gender", [
-        { value: "Male", text: "Male" },
+        { value: "Male",   text: "Male" },
         { value: "Female", text: "Female" },
-        { value: "Other", text: "Other" }
+        { value: "Other",  text: "Other" }
     ]);
     const saveBtn = document.getElementById("saveBtn");
     if (saveBtn) saveBtn.style.display = "block";
 }
- 
+
 function convertToSelect(id, options) {
     const input = document.getElementById(id);
     if (!input || input.tagName === "SELECT") return;
@@ -698,7 +712,7 @@ function convertToSelect(id, options) {
     select.value = currentValue;
     input.parentNode.replaceChild(select, input);
 }
- 
+
 function saveProfile() {
     const user = JSON.parse(localStorage.getItem("loggedInUser"));
     if (!user || !user.email) {
@@ -706,24 +720,24 @@ function saveProfile() {
         setTimeout(() => window.location.href = "index.html", 1500);
         return;
     }
- 
+
     const contact = document.getElementById("contact").value.trim();
     if (!/^[0-9]{10}$/.test(contact)) { showToast("Enter valid 10-digit phone number ❌", "error"); return; }
- 
+
     const data = {
-        email: user.email,
+        email:     user.email,
         firstName: document.getElementById("firstName").value.trim(),
-        lastName: document.getElementById("lastName").value.trim(),
+        lastName:  document.getElementById("lastName").value.trim(),
         contact,
-        city: document.getElementById("city").value.trim(),
-        gender: document.getElementById("gender").value,
-        type: document.getElementById("type").value
+        city:      document.getElementById("city").value.trim(),
+        gender:    document.getElementById("gender").value,
+        type:      document.getElementById("type").value
     };
- 
+
     fetch("https://hirex-backend-sio8.onrender.com/update-profile", {
-        method: "POST",
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
+        body:    JSON.stringify(data)
     })
     .then(res => res.json())
     .then(result => {
@@ -734,7 +748,7 @@ function saveProfile() {
     })
     .catch(() => showToast("Failed to update profile. Try again.", "error"));
 }
- 
+
 // ==========================
 // 🔓 LOGOUT
 // ==========================
@@ -742,18 +756,18 @@ function logout() {
     localStorage.clear();
     window.location.replace("index.html");
 }
- 
+
 function goToInterview(appId) {
     localStorage.setItem("selectedAppId", appId);
     window.location.href = "interview.html";
 }
- 
+
 function navigateEmp(section, el) {
     showSection(section);
     document.querySelectorAll(".bottom-nav .nav-item").forEach(item => item.classList.remove("active"));
     el.classList.add("active");
 }
- 
+
 // ==========================
 // 🔥 TOAST
 // ==========================
@@ -765,4 +779,3 @@ function showToast(message, type = "success") {
     if (type === "error") toast.classList.add("error");
     setTimeout(() => toast.className = "", 3000);
 }
- 
