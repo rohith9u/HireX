@@ -136,10 +136,11 @@ if (data.isNewUser || !data.user.role) {
 
     if (role === "user") {
         window.location.replace("dashboard.html");
-    } else if (role === "employer") {
+    } else if (role === "employer" || role === "recruiter") {
         window.location.replace("employer.html");
     } else {
-        window.location.replace("dashboard.html");
+        // Unknown role — send to complete profile to fix it
+        window.location.replace("complete-profile.html");
     }
 }
 
@@ -232,8 +233,8 @@ function login() {
 
                 if (role === "user") {
                     window.location.replace("dashboard.html");
-                } else if (role === "employer") {
-                    window.location.replace ("employer.html");
+                } else if (role === "employer" || role === "recruiter") {
+                    window.location.replace("employer.html");
                 } else {
                     console.error("Invalid role:", role);
                     showToast("Unknown user role ❌", "error");
