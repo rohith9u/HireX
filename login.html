@@ -129,12 +129,12 @@ function googleLogin() {
 showToast("Google Login Successful");
 
 // 🔥 INSTANT REDIRECT (NO DELAY)
-if (data.isNewUser || !data.user.role) {
+if (data.isNewUser) {
     window.location.replace("complete-profile.html");
 } else {
     let role = data.user.role.toLowerCase();
 
-    if (role === "user") {
+    if (role === "job_seeker")  {
         window.location.replace("dashboard.html");
     } else if (role === "employer" || role === "recruiter") {
         window.location.replace("employer.html");
@@ -231,7 +231,7 @@ function login() {
 
             setTimeout(() => {
 
-                if (role === "user") {
+                if (role === "job_seeker") { 
                     window.location.replace("dashboard.html");
                 } else if (role === "employer" || role === "recruiter") {
                     window.location.replace("employer.html");

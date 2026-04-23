@@ -125,7 +125,18 @@ function showSection(section, addToHistory = true) {
     }
 
     if (section === "applications") {
-        content.innerHTML = `<h2>My Applications</h2><div id="appList"></div>`;
+        content.innerHTML = `
+        <div class="apps-page-header">
+            <h2>My Applications</h2>
+            <div class="apps-filter-tabs">
+                <button class="filter-tab active" onclick="filterApps('all', this)">All</button>
+                <button class="filter-tab" onclick="filterApps('Applied', this)">Applied</button>
+                <button class="filter-tab" onclick="filterApps('Interview', this)">Interview</button>
+                <button class="filter-tab" onclick="filterApps('Selected', this)">Selected</button>
+                <button class="filter-tab" onclick="filterApps('Rejected', this)">Rejected</button>
+            </div>
+        </div>
+        <div id="appList"></div>`;
         loadApplications();
     }
 
@@ -381,72 +392,200 @@ function applyFilters() {
 }
 
 // ==========================
-// APPLICATIONS
+// APPLICATIONS — History View
 // ==========================
+let allMyApps   = [];
+let allJobsData = [];
+
+function filterApps(status, btn) {
+    document.querySelectorAll(".filter-tab").forEach(t => t.classList.remove("active"));
+    if (btn) btn.classList.add("active");
+    renderApplications(status === "all" ? allMyApps : allMyApps.filter(a => a.status === status));
+}
+
 function loadApplications() {
+    const container = document.getElementById("appList");
+    if (!container) return;
+    container.innerHTML = `<div class="loading-apps"><div class="spinner"></div><p>Loading your applications…</p></div>`;
+
     Promise.all([
         fetch("https://hirex-backend-sio8.onrender.com/jobs").then(res => res.json()),
         fetch("https://hirex-backend-sio8.onrender.com/applications").then(res => res.json())
     ])
     .then(([jobs, apps]) => {
-        const container = document.getElementById("appList");
-        if (!container) return;
-        container.innerHTML = "";
+        allJobsData = jobs;
+        allMyApps   = apps.filter(app => app.email === email);
 
-        const myApps = apps.filter(app => app.email === email);
+        // Priority: active statuses first
+        const priority = { "Interview": 1, "Applied": 2, "Screening": 3, "Selected": 4, "Rejected": 5 };
+        allMyApps.sort((a, b) => (priority[a.status] || 9) - (priority[b.status] || 9));
 
-        const priority = { "Interview": 1, "Applied": 2, "Selected": 3, "Rejected": 4 };
-        myApps.sort((a, b) => (priority[a.status] || 5) - (priority[b.status] || 5));
+        renderApplications(allMyApps);
+    })
+    .catch(err => {
+        console.log("Error loading applications:", err);
+        const c = document.getElementById("appList");
+        if (c) c.innerHTML = `<p style="color:#f87171;padding:20px;">Failed to load applications. Please try again.</p>`;
+    });
+}
 
-        if (myApps.length === 0) {
-            container.innerHTML = `<p style="color:#94a3b8;padding:20px 0;">No applications yet. Start exploring jobs!</p>`;
-            return;
+function renderApplications(appList) {
+    const container = document.getElementById("appList");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (appList.length === 0) {
+        container.innerHTML = `
+        <div class="empty-apps">
+            <div class="empty-icon">📂</div>
+            <h3>No applications here yet</h3>
+            <p>Start exploring jobs and apply to begin your journey!</p>
+            <button class="apply-btn" onclick="showSection('jobs')" style="margin-top:16px;">Browse Jobs</button>
+        </div>`;
+        return;
+    }
+
+    const highlightId = localStorage.getItem("highlightJobId");
+
+    appList.forEach(app => {
+        const job     = allJobsData.find(j => String(j._id) === String(app.jobId));
+        const status  = app.status || "Applied";
+        const isActive = status === "Interview" || status === "Applied" || status === "Screening";
+        const isHighlight = highlightId && String(app.jobId) === highlightId;
+
+        const statusMeta = {
+            "Applied":   { icon: "📤", color: "#3b82f6", bg: "rgba(59,130,246,0.12)", label: "Applied" },
+            "Screening": { icon: "🔍", color: "#f59e0b", bg: "rgba(245,158,11,0.12)", label: "Screening" },
+            "Interview": { icon: "📅", color: "#a855f7", bg: "rgba(168,85,247,0.15)", label: "Interview" },
+            "Selected":  { icon: "🎉", color: "#22c55e", bg: "rgba(34,197,94,0.12)",  label: "Selected"  },
+            "Rejected":  { icon: "❌", color: "#ef4444", bg: "rgba(239,68,68,0.10)",  label: "Rejected"  }
+        };
+        const meta = statusMeta[status] || statusMeta["Applied"];
+
+        // Build the timeline steps
+        const steps = ["Applied", "Screening", "Interview", "Selected"];
+        const currentStepIndex = steps.indexOf(status);
+        const isRejected = status === "Rejected";
+
+        let timelineHTML = "";
+        if (!isRejected) {
+            timelineHTML = `<div class="app-timeline">` +
+                steps.map((step, i) => {
+                    const done    = i < currentStepIndex;
+                    const current = i === currentStepIndex;
+                    const cls     = done ? "step done" : current ? "step current" : "step pending";
+                    return `<div class="${cls}">
+                        <div class="step-dot"></div>
+                        <span>${step}</span>
+                    </div>` + (i < steps.length - 1 ? `<div class="step-line ${done ? 'done' : ''}"></div>` : "");
+                }).join("") +
+            `</div>`;
+        } else {
+            timelineHTML = `<div class="app-timeline rejected-line">
+                <div class="step done"><div class="step-dot"></div><span>Applied</span></div>
+                <div class="step-line done"></div>
+                <div class="step rejected"><div class="step-dot"></div><span>Rejected</span></div>
+            </div>`;
         }
 
-        const highlightId = localStorage.getItem("highlightJobId");
+        const resumeURL = app.resumeUrl
+            ? `https://hirex-backend-sio8.onrender.com/${app.resumeUrl.startsWith("uploads/") ? app.resumeUrl : "uploads/" + app.resumeUrl}`
+            : "";
 
-        myApps.forEach(app => {
-            const job         = jobs.find(j => String(j._id) === String(app.jobId));
-            const statusClass = (app.status || "applied").toLowerCase();
-            const isHighlight = highlightId && String(app.jobId) === highlightId;
+        const appliedDate = app.appliedAt || app.createdAt
+            ? new Date(app.appliedAt || app.createdAt).toLocaleDateString("en-IN", { day:"numeric", month:"short", year:"numeric" })
+            : "Unknown";
 
-            const div = document.createElement("div");
-            div.className = "app-card" + (isHighlight ? " highlight-job" : "");
-            div.setAttribute("data-id", String(app.jobId));
+        const matchScore = app.matchScore != null ? Math.round(app.matchScore) : null;
 
-            const resumeURL = app.resume
-                ? `https://hirex-backend-sio8.onrender.com/${app.resume.startsWith("uploads/") ? app.resume : "uploads/" + app.resume}`
-                : "";
+        const div = document.createElement("div");
+        div.className = "app-history-card" + (isActive ? " active-app" : "") + (isHighlight ? " highlight-job" : "");
+        div.setAttribute("data-id", String(app.jobId));
+        div.setAttribute("data-status", status);
 
-            div.innerHTML = `
-                <div class="app-header">
-                    <h3>${job ? job.title : "Job no longer available"}</h3>
-                    <span class="status-badge ${statusClass}">${app.status}</span>
-                </div>
-                <p><b>Company:</b> ${job ? job.company : "N/A"}</p>
-                <p><b>Location:</b> ${job ? job.location : "N/A"}</p>
-                ${app.interviewDate ? `
-                <p style="color:#38bdf8;font-weight:500;">
-                    📅 Interview: ${new Date(app.interviewDate).toLocaleString()}
-                </p>` : ""}
-                ${resumeURL ? `<a href="${resumeURL}" target="_blank" class="resume-btn">📄 View Resume</a>` : ""}
-            `;
-            container.appendChild(div);
+        div.innerHTML = `
+        <div class="ahc-glow" style="background:${meta.color};"></div>
+
+        <div class="ahc-top">
+            <div class="ahc-title-block">
+                <h3 class="ahc-job-title">${job ? (job.title || "Unknown Position") : "Job no longer available"}</h3>
+                <p class="ahc-company">${job ? (job.companyName || job.company || "N/A") : "N/A"} &nbsp;•&nbsp; ${job ? (job.location || "N/A") : "N/A"}</p>
+            </div>
+            <div class="ahc-badge" style="background:${meta.bg}; color:${meta.color}; border:1px solid ${meta.color}40;">
+                ${meta.icon}&nbsp;${meta.label}
+            </div>
+        </div>
+
+        <div class="ahc-meta">
+            <span class="ahc-meta-item">📆 Applied on ${appliedDate}</span>
+            ${matchScore !== null ? `<span class="ahc-meta-item">🎯 Match: <b style="color:${matchScore >= 60 ? '#22c55e' : matchScore >= 30 ? '#f59e0b' : '#ef4444'}">${matchScore}%</b></span>` : ""}
+            ${job && job.salary ? `<span class="ahc-meta-item">💰 ₹${Number(job.salary).toLocaleString("en-IN")}</span>` : ""}
+        </div>
+
+        ${isActive ? `<div class="active-pulse-bar" style="background:linear-gradient(90deg,${meta.color}55,${meta.color},${meta.color}55);"></div>` : ""}
+
+        ${status === "Interview" && app.interviewDate ? `
+        <div class="interview-banner">
+            <span>📅</span>
+            <div>
+                <b>Interview Scheduled</b>
+                <p>${new Date(app.interviewDate).toLocaleString("en-IN", {weekday:"short",day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"})}</p>
+            </div>
+        </div>` : ""}
+
+        ${status === "Selected" ? `
+        <div class="selected-banner">
+            🎉 Congratulations! You've been selected for this position.
+        </div>` : ""}
+
+        ${timelineHTML}
+
+        <div class="ahc-footer">
+            ${resumeURL ? `<a href="${resumeURL}" target="_blank" class="ahc-resume-btn">📄 Resume</a>` : ""}
+            <button class="ahc-details-btn" onclick="toggleAppDetails(this, '${app._id}')">Details ▾</button>
+        </div>
+
+        <div class="ahc-details" id="details-${app._id}" style="display:none;">
+            <div class="ahc-detail-grid">
+                <div><label>Degree</label><span>${app.degree || "N/A"}</span></div>
+                <div><label>City</label><span>${app.city || "N/A"}</span></div>
+                <div><label>Phone</label><span>${app.phone || "N/A"}</span></div>
+                <div><label>Job Type</label><span>${job ? (job.employmentType || job.jobType || "N/A") : "N/A"}</span></div>
+            </div>
+            ${app.matchedSkills && app.matchedSkills.length > 0 ? `
+            <div class="skill-chips-row">
+                <label>✅ Matched Skills</label>
+                <div class="skill-chips">${(Array.isArray(app.matchedSkills) ? app.matchedSkills : []).map(s => `<span class="chip matched">${s}</span>`).join("")}</div>
+            </div>` : ""}
+            ${app.missingSkills && app.missingSkills.length > 0 ? `
+            <div class="skill-chips-row" style="margin-top:8px;">
+                <label>⚠️ Skills to Improve</label>
+                <div class="skill-chips">${(Array.isArray(app.missingSkills) ? app.missingSkills : []).map(s => `<span class="chip missing">${s}</span>`).join("")}</div>
+            </div>` : ""}
+        </div>
+        `;
+
+        container.appendChild(div);
+    });
+
+    // Scroll to highlighted card
+    setTimeout(() => {
+        if (!highlightId) return;
+        document.querySelectorAll(".app-history-card").forEach(card => {
+            if (card.getAttribute("data-id") === highlightId) {
+                card.scrollIntoView({ behavior: "smooth", block: "center" });
+                localStorage.removeItem("highlightJobId");
+            }
         });
+    }, 120);
+}
 
-        // Scroll to highlighted card
-        setTimeout(() => {
-            if (!highlightId) return;
-            const cards = document.querySelectorAll(".app-card");
-            cards.forEach(card => {
-                if (card.getAttribute("data-id") === highlightId) {
-                    card.scrollIntoView({ behavior: "smooth", block: "center" });
-                    localStorage.removeItem("highlightJobId");
-                }
-            });
-        }, 100);
-    })
-    .catch(err => console.log("Error loading applications:", err));
+function toggleAppDetails(btn, appId) {
+    const panel = document.getElementById("details-" + appId);
+    if (!panel) return;
+    const open = panel.style.display !== "none";
+    panel.style.display = open ? "none" : "block";
+    btn.textContent = open ? "Details ▾" : "Details ▴";
 }
 
 // ==========================
