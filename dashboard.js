@@ -22,8 +22,12 @@ if (!email && sessionUser?.email) {
 // Only runs for Google accounts (no password stored locally)
 (function checkProfileComplete() {
     if (!sessionUser) return;
-    const isGoogleAccount  = !sessionUser.password || sessionUser.password === "";
-    const isProfileMissing = !sessionUser.city || !sessionUser.gender;
+    const isGoogleAccount = !sessionUser.passwordHash || sessionUser.passwordHash === "";
+    const hasLocation = sessionUser.profile?.location?.trim() !== "";
+    const hasGender   = sessionUser.gender?.trim() !== "";
+    const hasType     = sessionUser.type?.trim() !== "";
+
+    const isProfileMissing = !hasLocation || !hasGender || !hasType;
     if (isGoogleAccount && isProfileMissing) {
         window.location.replace("complete-profile.html");
     }
