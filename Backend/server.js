@@ -42,96 +42,152 @@ startServer();
 
 // ─── 1. USERS ────────────────────────────────────────────────
 const userSchema = new mongoose.Schema({
-    firstName:    { type: String, default: "" },
-    lastName:     { type: String, default: "" },
     email:        { type: String, required: true, unique: true, lowercase: true, trim: true },
-    password:     { type: String, default: "" },
-    role:         { type: String, enum: ["applicant", "recruiter", "user", "employer"], default: "applicant" },
-    skills:       { type: [String], default: [] },
-    experience:   { type: Number, default: 0 },
+    passwordHash: { type: String, default: "" },
+    role:         { type: String, enum: ["job_seeker", "recruiter"], default: "job_seeker" },
+
     profile: {
-        resumeUrl:  { type: String, default: "" },
-        education:  { type: String, default: "" },
-        phone:      { type: String, default: "" }
+        firstName: { type: String, default: "" },
+        lastName:  { type: String, default: "" },
+        phone:     { type: String, default: "" },
+        location:  { type: String, default: "" }
     },
-    contact:      { type: String, default: "" },
-    city:         { type: String, default: "" },
+
+    // Extra fields used during registration / Google login
     gender:       { type: String, default: "" },
     type:         { type: String, default: "" },
     profileImage: { type: String, default: "" },
-    resume:       { type: String, default: "" }
+
+    resume: {
+        fileUrl:    { type: String, default: "" },
+        parsedData: {
+            skills:     { type: [String], default: [] },
+            experience: { type: [mongoose.Schema.Types.Mixed], default: [] },
+            education:  { type: [mongoose.Schema.Types.Mixed], default: [] }
+        }
+    },
+
+    createdAt: { type: Date, default: Date.now }
 }, { timestamps: true });
 
 const User = mongoose.model("User", userSchema);
 
 // ─── 2. JOBS ─────────────────────────────────────────────────
 const jobSchema = new mongoose.Schema({
+    postedBy:       { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    postedByEmail:  { type: String, default: "" },   // convenience for email-based queries
+
     title:          { type: String, required: true },
-    company:        { type: String, required: true },
-    location:       { type: String, required: true },
-    salary:         { type: String, default: "" },
-    requiredSkills: { type: [String], default: [] },
-    skills:         { type: String, default: "" },
-    jobType:        { type: String, enum: ["Full-Time", "Part-Time", "Internship"], default: "Full-Time" },
-    domain:         { type: String, required: true },
-    experience:     { type: String, default: "0" },
     description:    { type: String, default: "" },
-    postedBy:       { type: String, default: "" },
-    postedByUser:   { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
-    status:         { type: String, enum: ["Open", "Closed", "active", "closed"], default: "Open" }
+
+    companyName:    { type: String, required: true },
+    location:       { type: String, required: true },
+
+    employmentType: { type: String, default: "Full-Time" },
+    skills:         { type: [String], default: [] },
+
+    // Extra fields kept for existing frontend compatibility
+    salary:         { type: String, default: "" },
+    domain:         { type: String, default: "" },
+    experience:     { type: String, default: "0" },
+
+    status:         { type: String, enum: ["open", "closed"], default: "open" },
+    createdAt:      { type: Date, default: Date.now }
 }, { timestamps: true });
 
 const Job = mongoose.model("Job", jobSchema);
 
-// ─── 3. APPLICATIONS ─────────────────────────────────────────
+// ─── 3. APPLICATIONS (core intelligence layer) ───────────────
 const applicationSchema = new mongoose.Schema({
-    userId:         { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
-    jobId:          { type: mongoose.Schema.Types.Mixed, required: true },
+    userId:  { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    jobId:   { type: mongoose.Schema.Types.ObjectId, ref: "Job", required: true },
+
+    // 🔥 Match intelligence
+    matchScore:    { type: Number, default: 0 },
+    matchedSkills: { type: [String], default: [] },
+    missingSkills: { type: [String], default: [] },
+
+    // Snapshot of resume at time of application
+    resumeSnapshot: {
+        skills:     { type: [String], default: [] },
+        experience: { type: [mongoose.Schema.Types.Mixed], default: [] }
+    },
+
+    // Applicant details snapshot (for recruiter view without joining User)
+    name:   { type: String, default: "" },
+    email:  { type: String, default: "" },
+    phone:  { type: String, default: "" },
+    city:   { type: String, default: "" },
+    degree: { type: String, default: "" },
+
+    resumeUrl: { type: String, default: "" },
+
     status: {
         type: String,
-        enum: ["Applied", "Interview", "Selected", "Rejected", "Screening"],
+        enum: ["Applied", "Screening", "Interview", "Selected", "Rejected"],
         default: "Applied"
     },
-    matchScore:     { type: Number, default: 0 },
-    match:          { type: Number, default: 0 },
-    matchedSkills:  { type: [String], default: [] },
-    missingSkills:  { type: [String], default: [] },
-    resumeUrl:      { type: String, default: "" },
-    resume:         { type: String, default: "" },
-    name:           { type: String, default: "" },
-    email:          { type: String, default: "" },
-    phone:          { type: String, default: "" },
-    city:           { type: String, default: "" },
-    degree:         { type: String, default: "" },
-    experience:     { type: Number, default: 0 },
-    skills:         { type: [String], default: [] },
-    interviewDate:  { type: String, default: null }
+
+    appliedAt: { type: Date, default: Date.now }
 }, { timestamps: true });
 
 const Application = mongoose.model("Application", applicationSchema);
 
-// ─── 4. INTERVIEWS ───────────────────────────────────────────
+// ─── 4. APPLICATION HISTORY ───────────────────────────────────
+const applicationHistorySchema = new mongoose.Schema({
+    applicationId: { type: mongoose.Schema.Types.ObjectId, ref: "Application", required: true },
+    status:        { type: String, required: true },
+    changedAt:     { type: Date, default: Date.now }
+});
+
+const ApplicationHistory = mongoose.model("ApplicationHistory", applicationHistorySchema);
+
+// ─── 5. INTERVIEWS ────────────────────────────────────────────
 const interviewSchema = new mongoose.Schema({
-    applicationId:  { type: mongoose.Schema.Types.ObjectId, ref: "Application", required: true },
-    scheduledAt:    { type: Date, required: true },
-    mode:           { type: String, enum: ["Online", "Offline"], default: "Online" },
-    meetingLink:    { type: String, default: "" },
-    status:         { type: String, enum: ["Scheduled", "Completed", "Cancelled"], default: "Scheduled" },
-    feedback:       { type: String, default: "" }
+    applicationId: { type: mongoose.Schema.Types.ObjectId, ref: "Application", required: true },
+    scheduledBy:   { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    scheduledAt:   { type: Date, required: true },
+
+    type:        { type: String, enum: ["online", "offline"], default: "online" },
+    meetingLink: { type: String, default: "" },
+
+    status: { type: String, enum: ["scheduled", "completed", "cancelled"], default: "scheduled" }
 }, { timestamps: true });
 
 const Interview = mongoose.model("Interview", interviewSchema);
 
-// ─── 5. NOTIFICATIONS ────────────────────────────────────────
+// ─── 6. INTERVIEW FEEDBACK ────────────────────────────────────
+const interviewFeedbackSchema = new mongoose.Schema({
+    interviewId: { type: mongoose.Schema.Types.ObjectId, ref: "Interview", required: true },
+    rating:      { type: Number, min: 1, max: 5, default: null },
+    comments:    { type: String, default: "" },
+    decision:    { type: String, enum: ["select", "reject"], default: null }
+}, { timestamps: true });
+
+const InterviewFeedback = mongoose.model("InterviewFeedback", interviewFeedbackSchema);
+
+// ─── 7. NOTIFICATIONS ─────────────────────────────────────────
 const notificationSchema = new mongoose.Schema({
-    userId:         { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    message:        { type: String, required: true },
-    type:           { type: String, enum: ["Application", "Interview", "Selection", "Rejection", "General"], default: "General" },
-    status:         { type: String, enum: ["Sent", "Pending", "Read"], default: "Pending" },
-    relatedId:      { type: mongoose.Schema.Types.ObjectId, default: null }
+    userId:    { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    message:   { type: String, required: true },
+    type:      { type: String, enum: ["application", "interview", "selection"], default: "application" },
+    isRead:    { type: Boolean, default: false },
+    relatedId: { type: mongoose.Schema.Types.ObjectId, default: null },
+    createdAt: { type: Date, default: Date.now }
 }, { timestamps: true });
 
 const Notification = mongoose.model("Notification", notificationSchema);
+
+// ─── 8. SAVED JOBS ────────────────────────────────────────────
+const savedJobSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    jobId:  { type: mongoose.Schema.Types.ObjectId, ref: "Job", required: true }
+}, { timestamps: true });
+
+// Prevent duplicate saves
+savedJobSchema.index({ userId: 1, jobId: 1 }, { unique: true });
+
+const SavedJob = mongoose.model("SavedJob", savedJobSchema);
 
 // ==========================
 // 🔥 IN-MEMORY OTP STORE
@@ -173,15 +229,32 @@ function buildHtml(heading, body) {
 }
 
 // ==========================
-// 🔥 NOTIFICATION HELPER
+// 🔥 HELPERS
 // ==========================
-async function createNotification(userId, message, type = "General", relatedId = null) {
+
+/** Create a notification document */
+async function createNotification(userId, message, type = "application", relatedId = null) {
     try {
         if (!userId) return;
-        await Notification.create({ userId, message, type, status: "Pending", relatedId });
+        await Notification.create({ userId, message, type, isRead: false, relatedId });
     } catch (err) {
         console.log("Notification create error:", err.message);
     }
+}
+
+/** Record a status change in ApplicationHistory */
+async function recordStatusChange(applicationId, status) {
+    try {
+        await ApplicationHistory.create({ applicationId, status });
+    } catch (err) {
+        console.log("History record error:", err.message);
+    }
+}
+
+/** Normalise role strings coming from frontend */
+function normaliseRole(role) {
+    if (role === "employer" || role === "recruiter") return "recruiter";
+    return "job_seeker";
 }
 
 // ==========================
@@ -241,18 +314,16 @@ app.post("/register-otp", async (req, res) => {
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const expiresAt = Date.now() + 10 * 60 * 1000;
         const hashedPassword = await bcrypt.hash(password, 10);
-
-        // ✅ FIX: Normalise role — employer → recruiter, else → applicant
-        const normalisedRole = (role === "employer" || role === "recruiter") ? "recruiter" : "applicant";
+        const normalisedRole = normaliseRole(role);
 
         otpStore.set(email.toLowerCase(), {
             otp, expiresAt,
             userData: {
-                firstName, lastName,
                 email: email.toLowerCase(),
-                password: hashedPassword,
-                contact, city, gender, type,
-                role: normalisedRole
+                passwordHash: hashedPassword,
+                role: normalisedRole,
+                profile: { firstName, lastName, phone: contact, location: city },
+                gender, type
             }
         });
 
@@ -296,25 +367,21 @@ app.post("/verify-otp", async (req, res) => {
 
         if (entry.otp !== otp.trim()) return res.json({ message: "Invalid OTP ❌" });
 
-        const newUser = new User({
-            ...entry.userData,
-            profile: { phone: entry.userData.contact || "" }
-        });
+        const newUser = new User(entry.userData);
         await newUser.save();
         otpStore.delete(email.toLowerCase());
 
         sendMail(
             email,
             "Welcome to HireX 🎉",
-            `Hi ${entry.userData.firstName}, your HireX account is ready. Start exploring jobs now!`,
+            `Hi ${entry.userData.profile.firstName}, your HireX account is ready. Start exploring jobs now!`,
             buildHtml(
                 "Welcome to HireX! 🎉",
-                `Hi <b>${entry.userData.firstName}</b>,<br><br>
+                `Hi <b>${entry.userData.profile.firstName}</b>,<br><br>
                 Your account has been created successfully. You can now log in and start exploring opportunities.`
             )
         );
 
-        // ✅ FIX: Return the role so frontend can redirect correctly after registration
         res.json({ message: "Registration successful ✅", role: entry.userData.role });
 
     } catch (err) {
@@ -355,7 +422,7 @@ app.post("/resend-otp", async (req, res) => {
 });
 
 // ==========================
-// 🔥 GOOGLE LOGIN  ← FIXED
+// 🔥 GOOGLE LOGIN
 // ==========================
 app.post("/google-login", async (req, res) => {
     try {
@@ -366,30 +433,21 @@ app.post("/google-login", async (req, res) => {
         let isNewUser = false;
 
         if (!user) {
-            // Brand-new user — create account
             isNewUser = true;
             user = new User({
-                firstName: firstName || "",
-                lastName:  lastName  || "",
-                email:     email.toLowerCase(),
-                role:      "applicant",
-                city:      "",
-                gender:    ""
+                email: email.toLowerCase(),
+                role: "job_seeker",
+                profile: { firstName: firstName || "", lastName: lastName || "", phone: "", location: "" }
             });
             await user.save();
         } else {
-            // ✅ FIX: Existing Google-only users who never completed their profile
-            // are treated as "new" so they are sent to complete-profile.html
-            const isGoogleAccount  = !user.password || user.password === "";
-            const isProfileMissing = !user.city || !user.gender;
-            if (isGoogleAccount && isProfileMissing) {
-                isNewUser = true;
-            }
+            const isGoogleAccount  = !user.passwordHash || user.passwordHash === "";
+            const isProfileMissing = !user.profile?.location || !user.gender;
+            if (isGoogleAccount && isProfileMissing) isNewUser = true;
         }
 
-        // Never expose password hash to frontend
         const userObj = user.toObject();
-        delete userObj.password;
+        delete userObj.passwordHash;
 
         res.json({ message: "Google login success", user: userObj, isNewUser });
     } catch (err) {
@@ -399,7 +457,7 @@ app.post("/google-login", async (req, res) => {
 });
 
 // ==========================
-// 🔥 LOGIN  ← FIXED
+// 🔥 LOGIN
 // ==========================
 app.post("/login", async (req, res) => {
     try {
@@ -409,15 +467,13 @@ app.post("/login", async (req, res) => {
         const user = await User.findOne({ email: email.toLowerCase() });
         if (!user) return res.json({ message: "Invalid credentials" });
 
-        // Google-only accounts have no password
-        if (!user.password) return res.json({ message: "Please use Google login for this account" });
+        if (!user.passwordHash) return res.json({ message: "Please use Google login for this account" });
 
-        const isMatch = await bcrypt.compare(password, user.password);
+        const isMatch = await bcrypt.compare(password, user.passwordHash);
         if (!isMatch) return res.json({ message: "Invalid credentials" });
 
-        // ✅ FIX: Never expose password hash to frontend
         const userObj = user.toObject();
-        delete userObj.password;
+        delete userObj.passwordHash;
 
         res.json({ message: "Login successful", user: userObj });
     } catch (err) {
@@ -432,7 +488,7 @@ app.post("/login", async (req, res) => {
 app.get("/profile/:email", async (req, res) => {
     try {
         const email = req.params.email.trim().toLowerCase();
-        const user = await User.findOne({ email }).select("-password");
+        const user = await User.findOne({ email }).select("-passwordHash");
         if (!user) return res.json({ error: "User not found" });
         res.json(user);
     } catch (err) {
@@ -445,19 +501,20 @@ app.post("/update-profile", async (req, res) => {
         const { email, firstName, lastName, contact, city, gender, type, role } = req.body;
         if (!email) return res.json({ error: "Email required" });
 
+        const updates = {};
+        if (firstName !== undefined) updates["profile.firstName"] = firstName;
+        if (lastName  !== undefined) updates["profile.lastName"]  = lastName;
+        if (contact   !== undefined) updates["profile.phone"]     = contact;
+        if (city      !== undefined) updates["profile.location"]  = city;
+        if (gender    !== undefined) updates.gender = gender;
+        if (type      !== undefined) updates.type   = type;
+        if (role      !== undefined) updates.role   = normaliseRole(role);
+
         const updatedUser = await User.findOneAndUpdate(
             { email: email.toLowerCase() },
-            {
-                ...(firstName !== undefined && { firstName }),
-                ...(lastName  !== undefined && { lastName }),
-                ...(contact   !== undefined && { contact, "profile.phone": contact }),
-                ...(city      !== undefined && { city }),
-                ...(gender    !== undefined && { gender }),
-                ...(type      !== undefined && { type }),
-                ...(role      !== undefined && { role })
-            },
+            updates,
             { new: true }
-        ).select("-password");
+        ).select("-passwordHash");
 
         if (!updatedUser) return res.json({ error: "User not found" });
         res.json({ message: "Updated successfully", user: updatedUser });
@@ -475,16 +532,16 @@ app.post("/complete-profile", async (req, res) => {
         const { email, contact, city, gender, type, role } = req.body;
         if (!email) return res.json({ error: "Email required" });
 
-        // ✅ FIX: Properly normalise role so routing works on the frontend
-        let normalisedRole = "applicant";
-        if (role === "employer" || role === "recruiter") normalisedRole = "recruiter";
-        else if (role === "applicant" || role === "user") normalisedRole = "applicant";
-
         const updatedUser = await User.findOneAndUpdate(
             { email: email.toLowerCase() },
-            { contact, city, gender, type, role: normalisedRole, "profile.phone": contact || "" },
+            {
+                gender, type,
+                role: normaliseRole(role),
+                "profile.phone":    contact || "",
+                "profile.location": city    || ""
+            },
             { new: true }
-        ).select("-password");
+        ).select("-passwordHash");
 
         if (!updatedUser) return res.json({ error: "User not found" });
         res.json({ message: "Profile saved", user: updatedUser });
@@ -499,17 +556,7 @@ app.post("/complete-profile", async (req, res) => {
 // ==========================
 app.get("/jobs", async (req, res) => {
     try {
-        const jobs = await Job.aggregate([
-            {
-                $addFields: {
-                    sortOrder: {
-                        $cond: [{ $in: ["$status", ["active", "Open"]] }, 0, 1]
-                    }
-                }
-            },
-            { $sort: { sortOrder: 1, createdAt: -1 } },
-            { $project: { sortOrder: 0 } }
-        ]);
+        const jobs = await Job.find().sort({ status: 1, createdAt: -1 });
         res.json(jobs);
     } catch (err) {
         res.json({ error: "Failed to fetch jobs" });
@@ -524,10 +571,10 @@ app.post("/post-job", async (req, res) => {
             return res.json({ error: "All fields are required" });
 
         const existingJob = await Job.findOne({
-            title:    { $regex: new RegExp(`^${title.trim()}$`, "i") },
-            company:  { $regex: new RegExp(`^${company.trim()}$`, "i") },
-            postedBy: email.toLowerCase(),
-            status:   { $in: ["Open", "active"] }
+            title:        { $regex: new RegExp(`^${title.trim()}$`, "i") },
+            companyName:  { $regex: new RegExp(`^${company.trim()}$`, "i") },
+            postedByEmail: email.toLowerCase(),
+            status: "open"
         });
         if (existingJob) return res.json({ error: "Job already posted (active)" });
 
@@ -535,11 +582,17 @@ app.post("/post-job", async (req, res) => {
         const recruiter   = await User.findOne({ email: email.toLowerCase() }).select("_id");
 
         const newJob = new Job({
-            title, company, location, salary, jobType, domain, experience,
-            skills, requiredSkills: skillsArray, description,
-            postedBy: email.toLowerCase(),
-            postedByUser: recruiter?._id || null,
-            status: "Open"
+            title,
+            companyName: company,
+            location,
+            salary,
+            employmentType: jobType,
+            domain, experience,
+            skills: skillsArray,
+            description,
+            postedByEmail: email.toLowerCase(),
+            postedBy: recruiter?._id || null,
+            status: "open"
         });
         await newJob.save();
         res.json({ message: "Job posted successfully" });
@@ -551,7 +604,7 @@ app.post("/post-job", async (req, res) => {
 
 app.put("/close-job/:id", async (req, res) => {
     try {
-        const job = await Job.findByIdAndUpdate(req.params.id, { status: "Closed" }, { new: true });
+        const job = await Job.findByIdAndUpdate(req.params.id, { status: "closed" }, { new: true });
         if (!job) return res.json({ error: "Job not found" });
         res.json({ message: "Job closed" });
     } catch (err) {
@@ -573,7 +626,7 @@ app.get("/applications", async (req, res) => {
 
 app.post("/apply-job", upload.single("resume"), async (req, res) => {
     try {
-        const { name, email, phone, city, degree, experience, skills, jobId, match } = req.body;
+        const { name, email, phone, city, degree, experience, skills, jobId, match, matchedSkills, missingSkills } = req.body;
 
         if (!name || !email || !jobId)
             return res.json({ error: "Required fields missing" });
@@ -582,11 +635,10 @@ app.post("/apply-job", upload.single("resume"), async (req, res) => {
 
         const job = await Job.findById(jobId);
         if (!job) return res.json({ error: "Job not found" });
-        if (job.status === "Closed" || job.status === "closed")
-            return res.json({ error: "This job is closed" });
+        if (job.status === "closed") return res.json({ error: "This job is closed" });
 
-        const alreadyAccepted = await Application.findOne({ jobId, status: "Selected" });
-        if (alreadyAccepted) return res.json({ error: "This job position is already filled" });
+        const alreadyFilled = await Application.findOne({ jobId, status: "Selected" });
+        if (alreadyFilled) return res.json({ error: "This job position is already filled" });
 
         const existing = await Application.findOne({ email: email.toLowerCase(), jobId });
         if (existing && existing.status !== "Rejected")
@@ -595,31 +647,51 @@ app.post("/apply-job", upload.single("resume"), async (req, res) => {
         let parsedSkills = typeof skills === "string"
             ? skills.replace(/[\[\]"']/g, "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean)
             : (Array.isArray(skills) ? skills : []);
-        let parsedExp   = parseInt(experience) || 0;
+
+        let parsedMatchedSkills = typeof matchedSkills === "string"
+            ? matchedSkills.replace(/[\[\]"']/g, "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean)
+            : (Array.isArray(matchedSkills) ? matchedSkills : []);
+
+        let parsedMissingSkills = typeof missingSkills === "string"
+            ? missingSkills.replace(/[\[\]"']/g, "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean)
+            : (Array.isArray(missingSkills) ? missingSkills : []);
+
         let parsedMatch = parseFloat(match) || 0;
 
         const applicant = await User.findOne({ email: email.toLowerCase() }).select("_id");
 
         const newApp = new Application({
             userId: applicant?._id || null,
-            name, email: email.toLowerCase(), phone, city, degree,
-            experience: parsedExp,
-            skills: parsedSkills,
             jobId,
-            resume: resumePath,
-            resumeUrl: resumePath,
-            status: "Applied",
-            interviewDate: null,
-            match: parsedMatch,
-            matchScore: parsedMatch
+            name,
+            email:         email.toLowerCase(),
+            phone,
+            city,
+            degree,
+            resumeUrl:     resumePath,
+            status:        "Applied",
+
+            // 🔥 Match intelligence
+            matchScore:    parsedMatch,
+            matchedSkills: parsedMatchedSkills,
+            missingSkills: parsedMissingSkills,
+
+            // Resume snapshot
+            resumeSnapshot: {
+                skills:     parsedSkills,
+                experience: []
+            }
         });
         await newApp.save();
+
+        // Record initial status in history
+        await recordStatusChange(newApp._id, "Applied");
 
         if (applicant?._id) {
             await createNotification(
                 applicant._id,
-                `Your application for "${job.title}" at ${job.company} has been received.`,
-                "Application",
+                `Your application for "${job.title}" at ${job.companyName} has been received.`,
+                "application",
                 newApp._id
             );
         }
@@ -631,7 +703,7 @@ app.post("/apply-job", upload.single("resume"), async (req, res) => {
             buildHtml(
                 "Application Received ✅",
                 `Hello <b>${name}</b>,<br><br>
-                Your application for <b>${job.title}</b> at <b>${job.company}</b> has been successfully submitted!<br><br>
+                Your application for <b>${job.title}</b> at <b>${job.companyName}</b> has been successfully submitted!<br><br>
                 We will review your profile and get back to you soon.`
             )
         );
@@ -652,16 +724,18 @@ app.post("/update-status", async (req, res) => {
         const { appId, status } = req.body;
         if (!appId || !status) return res.json({ error: "appId and status required" });
 
-        const validStatuses = ["Applied", "Interview", "Selected", "Rejected", "Screening"];
+        const validStatuses = ["Applied", "Screening", "Interview", "Selected", "Rejected"];
         if (!validStatuses.includes(status)) return res.json({ error: "Invalid status" });
 
         const updatedApp = await Application.findByIdAndUpdate(appId, { status }, { new: true });
         if (!updatedApp) return res.json({ error: "Application not found" });
 
-        const notifType = status === "Selected" ? "Selection"
-                        : status === "Interview" ? "Interview"
-                        : status === "Rejected"  ? "Rejection"
-                        : "Application";
+        // Record history
+        await recordStatusChange(updatedApp._id, status);
+
+        const notifType = status === "Selected" ? "selection"
+                        : status === "Interview" ? "interview"
+                        : "application";
 
         if (updatedApp.userId) {
             const messages = {
@@ -713,32 +787,49 @@ app.post("/update-status", async (req, res) => {
 });
 
 // ==========================
+// 🔥 APPLICATION HISTORY
+// ==========================
+app.get("/application-history/:appId", async (req, res) => {
+    try {
+        const history = await ApplicationHistory.find({ applicationId: req.params.appId }).sort({ changedAt: 1 });
+        res.json(history);
+    } catch (err) {
+        res.json({ error: "Failed to fetch history" });
+    }
+});
+
+// ==========================
 // 🔥 SCHEDULE INTERVIEW
 // ==========================
 app.post("/schedule-interview", async (req, res) => {
     try {
-        const { appId, interviewDate, mode = "Online", meetingLink = "" } = req.body;
+        const { appId, interviewDate, type = "online", meetingLink = "", scheduledBy } = req.body;
         if (!appId || !interviewDate) return res.json({ error: "appId and interviewDate required" });
 
         const updatedApp = await Application.findByIdAndUpdate(
             appId,
-            { status: "Interview", interviewDate },
+            { status: "Interview" },
             { new: true }
         );
         if (!updatedApp) return res.json({ error: "Application not found" });
 
+        // Record status change
+        await recordStatusChange(updatedApp._id, "Interview");
+
         const interview = await Interview.create({
             applicationId: updatedApp._id,
+            scheduledBy:   scheduledBy || null,
             scheduledAt:   new Date(interviewDate),
-            mode, meetingLink,
-            status: "Scheduled"
+            type,
+            meetingLink,
+            status: "scheduled"
         });
 
         if (updatedApp.userId) {
             await createNotification(
                 updatedApp.userId,
                 `📅 Interview scheduled for ${new Date(interviewDate).toLocaleString()}.`,
-                "Interview",
+                "interview",
                 updatedApp._id
             );
         }
@@ -768,14 +859,14 @@ app.post("/schedule-interview", async (req, res) => {
 });
 
 // ==========================
-// 🔥 INTERVIEWS
+// 🔥 UPDATE INTERVIEW
 // ==========================
 app.post("/update-interview", async (req, res) => {
     try {
-        const { interviewId, status, feedback } = req.body;
+        const { interviewId, status } = req.body;
         const updated = await Interview.findByIdAndUpdate(
             interviewId,
-            { ...(status && { status }), ...(feedback && { feedback }) },
+            { ...(status && { status }) },
             { new: true }
         );
         if (!updated) return res.json({ error: "Interview not found" });
@@ -795,13 +886,37 @@ app.get("/interviews/:appId", async (req, res) => {
 });
 
 // ==========================
+// 🔥 INTERVIEW FEEDBACK
+// ==========================
+app.post("/interview-feedback", async (req, res) => {
+    try {
+        const { interviewId, rating, comments, decision } = req.body;
+        if (!interviewId) return res.json({ error: "interviewId required" });
+
+        const feedback = await InterviewFeedback.create({ interviewId, rating, comments, decision });
+        res.json({ message: "Feedback saved ✅", feedback });
+    } catch (err) {
+        res.json({ error: "Failed to save feedback" });
+    }
+});
+
+app.get("/interview-feedback/:interviewId", async (req, res) => {
+    try {
+        const feedback = await InterviewFeedback.findOne({ interviewId: req.params.interviewId });
+        res.json(feedback || {});
+    } catch (err) {
+        res.json({ error: "Failed to fetch feedback" });
+    }
+});
+
+// ==========================
 // 🔥 NOTIFICATIONS
 // ==========================
 app.get("/notifications/:userId", async (req, res) => {
     try {
         const notifications = await Notification.find({
             userId: req.params.userId,
-            status: { $in: ["Pending", "Sent"] }
+            isRead: false
         }).sort({ createdAt: -1 }).limit(50);
         res.json(notifications);
     } catch (err) {
@@ -811,7 +926,7 @@ app.get("/notifications/:userId", async (req, res) => {
 
 app.post("/notifications/read/:id", async (req, res) => {
     try {
-        await Notification.findByIdAndUpdate(req.params.id, { status: "Read" });
+        await Notification.findByIdAndUpdate(req.params.id, { isRead: true });
         res.json({ message: "Marked as read" });
     } catch (err) {
         res.json({ error: "Failed to update notification" });
@@ -821,8 +936,8 @@ app.post("/notifications/read/:id", async (req, res) => {
 app.post("/notifications/read-all/:userId", async (req, res) => {
     try {
         await Notification.updateMany(
-            { userId: req.params.userId, status: { $ne: "Read" } },
-            { status: "Read" }
+            { userId: req.params.userId, isRead: false },
+            { isRead: true }
         );
         res.json({ message: "All notifications marked as read" });
     } catch (err) {
@@ -831,12 +946,42 @@ app.post("/notifications/read-all/:userId", async (req, res) => {
 });
 
 // ==========================
-// 🔥 STATS (employer)
+// 🔥 SAVED JOBS
+// ==========================
+app.post("/saved-jobs/toggle", async (req, res) => {
+    try {
+        const { userId, jobId } = req.body;
+        if (!userId || !jobId) return res.json({ error: "userId and jobId required" });
+
+        const existing = await SavedJob.findOne({ userId, jobId });
+        if (existing) {
+            await SavedJob.deleteOne({ _id: existing._id });
+            return res.json({ message: "Job unsaved", saved: false });
+        }
+
+        await SavedJob.create({ userId, jobId });
+        res.json({ message: "Job saved ✅", saved: true });
+    } catch (err) {
+        res.json({ error: "Failed to toggle saved job" });
+    }
+});
+
+app.get("/saved-jobs/:userId", async (req, res) => {
+    try {
+        const savedJobs = await SavedJob.find({ userId: req.params.userId }).populate("jobId");
+        res.json(savedJobs);
+    } catch (err) {
+        res.json({ error: "Failed to fetch saved jobs" });
+    }
+});
+
+// ==========================
+// 🔥 STATS (recruiter)
 // ==========================
 app.get("/my-stats/:email", async (req, res) => {
     try {
         const email = req.params.email.toLowerCase();
-        const jobs  = await Job.find({ postedBy: email });
+        const jobs   = await Job.find({ postedByEmail: email });
         const jobIds = jobs.map(j => j._id);
         const appCount = await Application.countDocuments({ jobId: { $in: jobIds } });
         res.json({ jobsPosted: jobs.length, applicants: appCount });
