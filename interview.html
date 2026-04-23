@@ -15,79 +15,109 @@
   .apply-btn, .back-btn-premium { font-size: 15px; }
   .flatpickr-calendar { width: calc(100vw - 28px) !important; left: 14px !important; right: 14px !important; }
 }
-</style>
 
+/* ✅ Disabled button state */
+.apply-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+</style>
 </head>
 
 <body>
-    <div class="topbar">
+<div class="topbar">
     <img src="images/logo.png" class="logo-img">
-    </div>
-<div class="center-page">
+</div>
 
+<div class="center-page">
     <div class="register-card" style="max-width:500px;">
 
         <h2>📅 Schedule Interview</h2>
 
-        <label>Select Date & Time</label>
+        <!-- ✅ Show which applicant this is for -->
+        <p id="appInfo" style="color:#94a3b8; font-size:13px; margin-bottom:12px;"></p>
 
-        <input type="text" id="interviewTime" placeholder="Select date & time">
+        <label>Select Date &amp; Time</label>
+        <input type="text" id="interviewTime" placeholder="Select date &amp; time">
 
-        <button onclick="scheduleInterview()" class="apply-btn">
+        <button id="scheduleBtn" onclick="scheduleInterview()" class="apply-btn" style="margin-top:16px;">
             Schedule Interview
         </button>
 
-        <button onclick="goBack()" class="back-btn-premium">
+        <button onclick="goBack()" class="back-btn-premium" style="margin-top:10px;">
             ← Back
         </button>
 
     </div>
-
 </div>
 
 <div id="toast"></div>
 
 <script>
+// =============================================
+// INIT flatpickr
+// =============================================
 flatpickr("#interviewTime", {
     enableTime: true,
     dateFormat: "Y-m-d H:i",
     minDate: "today",
     maxDate: new Date().fp_incr(30),
-
     minTime: "10:00",
     maxTime: "18:00",
-
     time_24hr: false
 });
+
+// ✅ Get appId from localStorage — set by employer.js
 let appId = localStorage.getItem("selectedAppId");
 
-function scheduleInterview() {
+// ✅ Guard: if no appId, go back
+if (!appId) {
+    showToast("No application selected ❌", "error");
+    setTimeout(() => window.location.href = "employer.html", 1500);
+}
 
+// =============================================
+// SCHEDULE INTERVIEW
+// =============================================
+function scheduleInterview() {
     let time = document.getElementById("interviewTime").value;
+    let btn = document.getElementById("scheduleBtn");
 
     if (!time) {
-        showToast("Please select date & time ❌", "error");
+        showToast("Please select a date & time ❌", "error");
         return;
     }
+
+    if (!appId) {
+        showToast("No application selected ❌", "error");
+        return;
+    }
+
+    // ✅ Prevent double submit
+    btn.disabled = true;
+    btn.innerText = "Scheduling...";
 
     fetch("https://hirex-backend-sio8.onrender.com/schedule-interview", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            appId,
-            interviewDate: time
-        })
+        body: JSON.stringify({ appId, interviewDate: time })
     })
     .then(res => res.json())
     .then(data => {
-        showToast("Interview Scheduled ✅");
-
-        setTimeout(() => {
-            window.location.href = "employer.html";
-        }, 1500);
+        if (data.success || data.message) {
+            showToast("Interview Scheduled ✅");
+            setTimeout(() => window.location.href = "employer.html", 1500);
+        } else {
+            showToast(data.error || "Failed to schedule ❌", "error");
+            btn.disabled = false;
+            btn.innerText = "Schedule Interview";
+        }
     })
     .catch(() => {
-        showToast("Error scheduling ❌", "error");
+        showToast("Server error ❌", "error");
+        btn.disabled = false;
+        btn.innerText = "Schedule Interview";
     });
 }
 
@@ -95,18 +125,16 @@ function goBack() {
     window.location.href = "employer.html";
 }
 
-// 🔔 TOAST (reuse your system)
-function showToast(message, type="success") {
+// =============================================
+// TOAST
+// =============================================
+function showToast(message, type = "success") {
     let toast = document.getElementById("toast");
-
     toast.innerText = message;
     toast.className = "show";
-
-    if(type==="error") toast.classList.add("error");
-
-    setTimeout(()=>toast.className="",3000);
+    if (type === "error") toast.classList.add("error");
+    setTimeout(() => toast.className = "", 3000);
 }
-
 </script>
 
 </body>

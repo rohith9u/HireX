@@ -5,7 +5,6 @@
 <title>Apply Job</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link href="https://cdn.jsdelivr.net/npm/remixicon/fonts/remixicon.css" rel="stylesheet">
-<!-- LINK CSS -->
 <link rel="stylesheet" href="style.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <style>
@@ -13,53 +12,72 @@
   .topbar { height: 56px; }
   .layout { margin-top: 56px; }
 }
+
+/* ✅ Loading spinner for resume analysis */
+#analysisBox .analyzing {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #94a3b8;
+  font-size: 14px;
+  padding: 10px 0;
+}
+#analysisBox .analyzing::before {
+  content: "";
+  width: 16px;
+  height: 16px;
+  border: 2px solid #334155;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ✅ Submit button disabled state */
+.apply-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
 </style>
 </head>
 
 <body>
 
-<body>
-
-<!-- TOPBAR (same as dashboard) -->
+<!-- TOPBAR -->
 <div class="topbar">
     <img src="images/logo.png" class="logo-img">
-
     <div class="top-actions">
         <i class="ri-notification-3-line icon"></i>
-
         <div class="profile-top">
             <i class="ri-user-3-line"></i>
-            <span>User</span>
+            <span id="topbarName">User</span>
         </div>
-
         <i class="ri-logout-box-r-line icon" onclick="logout()"></i>
     </div>
 </div>
 
 <div class="layout">
 
-    <!-- SIDEBAR (same as dashboard) -->
+    <!-- SIDEBAR -->
     <div class="sidebar">
         <div class="brand">
             <i class="ri-briefcase-line"></i>
             <span>JobPortal</span>
         </div>
-
         <a href="dashboard.html">
             <i class="ri-dashboard-line"></i>
             <span>Dashboard</span>
         </a>
-
         <a href="dashboard.html#jobs">
             <i class="ri-briefcase-2-line"></i>
             <span>Jobs</span>
         </a>
-
         <a href="dashboard.html#applications">
             <i class="ri-file-list-3-line"></i>
             <span>Applications</span>
         </a>
-
         <a href="dashboard.html#profile">
             <i class="ri-user-3-line"></i>
             <span>Profile</span>
@@ -68,285 +86,54 @@
 
     <!-- MAIN CONTENT -->
     <div class="main">
-
         <div class="job-card-premium apply-card">
 
             <h2>Apply for Job</h2>
 
             <div class="form-container">
                 <div class="left-fields">
+
                     <input id="name" type="text" placeholder="Full Name" required>
 
-<input id="email" type="email" placeholder="Loading email..." readonly style="opacity:0.6; cursor:not-allowed; background:#1e293b;">
+                    <input id="email" type="email" placeholder="Loading email..."
+                           readonly style="opacity:0.6; cursor:not-allowed; background:#1e293b;">
 
-<input id="phone" type="tel" placeholder="Phone Number" required pattern="[0-9]{10}" maxlength="10">
+                    <input id="phone" type="tel" placeholder="Phone Number"
+                           required pattern="[0-9]{10}" maxlength="10">
 
-<input id="city" type="text" placeholder="City" required>
+                    <input id="city" type="text" placeholder="City" required>
 
-<input id="degree" type="text" placeholder="Highest Qualification" required>
+                    <input id="degree" type="text" placeholder="Highest Qualification" required>
 
-<input id="experience" type="number" placeholder="Experience (years)" min="0" max="50" required>
+                    <input id="experience" type="number"
+                           placeholder="Experience (years)" min="0" max="50" required>
 
-<input id="skills" type="text" placeholder="Skills (e.g. Java, React)" required>
+                    <input id="skills" type="text"
+                           placeholder="Skills (e.g. Java, React)" required>
 
-<input type="file" id="resumeInput" accept="application/pdf" required>
+                    <!-- ✅ Resume upload with clear label -->
+                    <label style="color:#94a3b8; font-size:13px; margin-bottom:4px; display:block;">
+                        Upload Resume (PDF only) <span style="color:#ef4444;">*</span>
+                    </label>
+                    <input type="file" id="resumeInput" accept="application/pdf" required>
 
-<div id="analysisBox" style="margin-top:15px;"></div>
+                    <!-- ✅ Analysis result box -->
+                    <div id="analysisBox" style="margin-top:15px;"></div>
 
                 </div>
             </div>
 
-            <button class="apply-btn" onclick="submitApplication()">
+            <!-- ✅ Submit button — disabled until resume is analyzed -->
+            <button class="apply-btn" id="submitBtn" onclick="submitApplication()" disabled>
                 Submit Application
             </button>
 
-            <p id="msg"></p>
+            <p id="msg" style="margin-top:10px;"></p>
 
         </div>
-
     </div>
 
 </div>
-
-</body>
-
-<script>
-    // ✅ AUTO-LOAD USER EMAIL + NAME FROM DATABASE
-    window.addEventListener("DOMContentLoaded", async () => {
-        let sessionUser = JSON.parse(localStorage.getItem("loggedInUser") || "null");
-
-        if (!sessionUser) {
-            window.location.replace("index.html");
-            return;
-        }
-
-        let userEmail = localStorage.getItem("userEmail") || sessionUser.email || "";
-
-        try {
-            let res = await fetch(`https://hirex-backend-sio8.onrender.com/profile/${userEmail}`);
-            let user = await res.json();
-
-            if (user && !user.error) {
-                // ✅ Fill email — readonly, user cannot change it
-                document.getElementById("email").value = user.email || userEmail;
-
-                // ✅ Pre-fill name too
-                let fullName = ((user.firstName || "") + " " + (user.lastName || "")).trim();
-                if (fullName) document.getElementById("name").value = fullName;
-
-                // ✅ Pre-fill city if available
-                if (user.city) document.getElementById("city").value = user.city;
-            } else {
-                // fallback to localStorage
-                document.getElementById("email").value = userEmail;
-                let fullName = ((sessionUser.firstName || "") + " " + (sessionUser.lastName || "")).trim();
-                if (fullName) document.getElementById("name").value = fullName;
-            }
-        } catch (err) {
-            console.log("Error fetching user profile:", err);
-            // fallback to localStorage
-            document.getElementById("email").value = userEmail;
-        }
-    });
-
-    document.getElementById("resumeInput").addEventListener("change", analyzeResume);
-
-// ✅ ADD THESE
-document.getElementById("skills").addEventListener("input", analyzeResume);
-document.getElementById("experience").addEventListener("input", analyzeResume);
-function submitApplication() {
-    let name = document.getElementById("name").value.trim();
-    let email = document.getElementById("email").value.trim();
-    let phone = document.getElementById("phone").value.trim();
-    let city = document.getElementById("city").value.trim();
-    let degree = document.getElementById("degree").value.trim();
-    let experience = document.getElementById("experience").value.trim();
-    let skills = document.getElementById("skills").value.trim();
-    let resumeFile = document.getElementById("resumeInput").files[0];
-
-    let jobId = localStorage.getItem("selectedJobId");
-    let msg = document.getElementById("msg");
-    if (!analyzedData) {
-    msg.style.color = "red";
-    msg.innerText = "Please upload resume first!";
-    return;
-    }
-    // 🔥 PHONE VALIDATION
-if (!/^[0-9]{10}$/.test(phone)) {
-    msg.style.color = "red";
-    msg.innerText = "Enter valid 10-digit phone number ❌";
-    return;
-}
-    if (!name || !email || !phone || !city || !degree || !experience || !skills || !resumeFile) {
-        msg.style.color = "red";
-        msg.innerText = "Please fill all fields!";
-        return;
-    }
-
-    let formData = new FormData();
-
-    formData.append("name", name);
-    formData.append("email", email);
-    formData.append("phone", phone);
-    formData.append("city", city);
-    formData.append("degree", degree);
-    formData.append("skills", analyzedData.skills);
-    formData.append("experience", analyzedData.experience);
-    formData.append("match", analyzedData.match);
-    formData.append("jobId", jobId);
-    formData.append("resume", resumeFile);
-
-    fetch("https://hirex-backend-sio8.onrender.com/apply-job", {
-        method: "POST",
-        body: formData
-    })
-    .then(res => res.json())
-    .then(data => {
-        msg.style.color = "green";
-        msg.innerText = data.message || "Applied!";
-        
-        setTimeout(() => {
-            window.location.href = "dashboard.html";
-        }, 1000);
-    })
-    .catch(() => {
-        msg.style.color = "red";
-        msg.innerText = "Server error!";
-    });
-}
-let analyzedData = null;
-
-async function analyzeResume() {
-
-    let file = document.getElementById("resumeInput").files[0];
-
-if (!file && !analyzedData) return;
-    let reader = new FileReader();
-
-    reader.onload = async function() {
-
-        let typedArray = new Uint8Array(this.result);
-        let pdf = await pdfjsLib.getDocument(typedArray).promise;
-
-        let text = "";
-
-        for (let i = 1; i <= pdf.numPages; i++) {
-            let page = await pdf.getPage(i);
-            let content = await page.getTextContent();
-
-            let strings = content.items.map(item => item.str);
-            text += strings.join(" ") + " ";
-        }
-
-        // 🔥 EXTRACT
-        let resumeSkills = extractSkills(text);
-
-// 🔥 get manual input
-let formSkills = document.getElementById("skills").value
-    .toLowerCase()
-    .split(",")
-    .map(s => s.trim());
-
-// 🔥 merge both (remove duplicates)
-let userSkills = [...new Set([...resumeSkills, ...formSkills])];
-        let resumeExp = extractExperience(text);
-
-// 🔥 get form experience
-let formExp = parseInt(document.getElementById("experience").value) || 0;
-
-// 🔥 take MAX (important logic)
-let userExp = Math.max(resumeExp, formExp);
-
-        // 🔥 GET JOB
-        let jobId = localStorage.getItem("selectedJobId");
-
-        let jobs = await fetch("https://hirex-backend-sio8.onrender.com/jobs").then(r => r.json());
-        let job = jobs.find(j => j._id == jobId);
-
-        let jobSkills = job.skills.toLowerCase().split(",");
-        let jobExp = parseInt(job.experience) || 0;
-        let normalizedUserSkills = userSkills.map(s => s.toLowerCase());
-
-        let matched = jobSkills.filter(skill => {
-    let cleanSkill = skill.trim().toLowerCase();
-    return userSkills.map(s => s.toLowerCase()).includes(cleanSkill);
-});
-
-        let missing = jobSkills.filter(skill => {
-    let cleanSkill = skill.trim().toLowerCase();
-    return !userSkills.map(s => s.toLowerCase()).includes(cleanSkill);
-});
-
-       let skillScore = (matched.length / jobSkills.length) * 100;
-
-let expScore = userExp >= jobExp
-    ? 100
-    : (userExp / jobExp) * 100;
-
-// ✅ STRICT LOGIC
-let finalScore = 0;
-
-if (matched.length > 0) {
-    if (skillScore >= 30) {
-        finalScore = (0.7 * skillScore) + (0.3 * expScore);
-    }
-}
-
-        analyzedData = {
-            skills: userSkills,
-            experience: userExp,
-            match: finalScore
-        };
-
-        // 🔥 SHOW RESULT (THIS IS WHAT YOU WANT)
-        document.getElementById("analysisBox").innerHTML = `
-            <h3>Match Score: ${finalScore.toFixed(1)}%</h3>
-
-            <p><b>Matched Skills:</b> ${matched.join(", ")}</p>
-            <p><b>Skill Gap Suggestions:</b> ${missing.join(", ")}</p>
-            <p><b>Experience:</b> ${userExp} / ${jobExp} years</p>
-        `;
-    };
-
-    reader.readAsArrayBuffer(file);
-}
-const skillMap = {
-    html: ["html", "html5", "basic html"],
-    css: ["css", "css3"],
-    javascript: ["javascript", "js"],
-    react: ["react", "reactjs"],
-    ds: ["ds", "data structures","dsa"],
-    python: ["python"]
-};
-
-function extractSkills(text) {
-    text = text.toLowerCase();
-    let skills = [];
-
-    for (let skill in skillMap) {
-        for (let keyword of skillMap[skill]) {
-
-            // 🔥 WORD MATCH (not random substring)
-            let regex = new RegExp("\\b" + keyword + "\\b", "i");
-
-            if (regex.test(text)) {
-                skills.push(skill);
-                break;
-            }
-        }
-    }
-
-    return skills;
-}
-function extractExperience(text) {
-    let match = text.match(/(\d+)\s*(year|years)/);
-    return match ? parseInt(match[1]) : 0;
-}
-function logout() {
-    localStorage.clear();
-    window.location.href = "index.html";
-}
-</script>
 
 <!-- 📱 BOTTOM NAV -->
 <div class="bottom-nav">
@@ -368,4 +155,324 @@ function logout() {
     </div>
 </div>
 
+<script>
+// =============================================
+// ✅ STATE
+// =============================================
+let analyzedData = null;
+
+// =============================================
+// ✅ ON LOAD — fetch user profile and pre-fill
+// =============================================
+window.addEventListener("DOMContentLoaded", async () => {
+    let sessionUser = JSON.parse(localStorage.getItem("loggedInUser") || "null");
+
+    if (!sessionUser) {
+        window.location.replace("index.html");
+        return;
+    }
+
+    let userEmail = localStorage.getItem("userEmail") || sessionUser.email || "";
+
+    try {
+        let res = await fetch(`https://hirex-backend-sio8.onrender.com/profile/${userEmail}`);
+        let user = await res.json();
+
+        if (user && !user.error) {
+            // ✅ Fill email — readonly
+            document.getElementById("email").value = user.email || userEmail;
+
+            // ✅ Pre-fill name
+            let fullName = ((user.firstName || "") + " " + (user.lastName || "")).trim();
+            if (fullName) {
+                document.getElementById("name").value = fullName;
+                // ✅ Update topbar name
+                document.getElementById("topbarName").textContent = user.firstName || "User";
+            }
+
+            // ✅ Pre-fill city
+            if (user.city) document.getElementById("city").value = user.city;
+
+            // ✅ Pre-fill phone
+            if (user.phone) document.getElementById("phone").value = user.phone;
+
+        } else {
+            // Fallback to localStorage
+            document.getElementById("email").value = userEmail;
+            let fullName = ((sessionUser.firstName || "") + " " + (sessionUser.lastName || "")).trim();
+            if (fullName) document.getElementById("name").value = fullName;
+            document.getElementById("topbarName").textContent = sessionUser.firstName || "User";
+        }
+    } catch (err) {
+        console.log("Error fetching profile:", err);
+        document.getElementById("email").value = userEmail;
+        document.getElementById("topbarName").textContent = sessionUser.firstName || "User";
+    }
+});
+
+// =============================================
+// ✅ RESUME ANALYSIS — triggered on file select
+// =============================================
+document.getElementById("resumeInput").addEventListener("change", function() {
+    if (this.files && this.files[0]) {
+        analyzeResume();
+    }
+});
+
+// Re-analyze if skills or experience are updated manually
+document.getElementById("skills").addEventListener("input", () => {
+    if (document.getElementById("resumeInput").files[0]) analyzeResume();
+});
+document.getElementById("experience").addEventListener("input", () => {
+    if (document.getElementById("resumeInput").files[0]) analyzeResume();
+});
+
+// =============================================
+// ✅ CORE: analyzeResume — sets analyzedData + enables submit
+// =============================================
+async function analyzeResume() {
+    let file = document.getElementById("resumeInput").files[0];
+    if (!file) return;
+
+    // Show loading
+    document.getElementById("analysisBox").innerHTML = `<div class="analyzing">Analyzing resume...</div>`;
+    document.getElementById("submitBtn").disabled = true;
+    analyzedData = null;
+
+    try {
+        // Extract text from PDF via PDF.js
+        let arrayBuffer = await file.arrayBuffer();
+        let typedArray = new Uint8Array(arrayBuffer);
+        let pdf = await pdfjsLib.getDocument(typedArray).promise;
+
+        let text = "";
+        for (let i = 1; i <= pdf.numPages; i++) {
+            let page = await pdf.getPage(i);
+            let content = await page.getTextContent();
+            text += content.items.map(item => item.str).join(" ") + " ";
+        }
+
+        // Extract skills & experience from resume text
+        let resumeSkills = extractSkills(text);
+        let resumeExp = extractExperience(text);
+
+        // Merge with manually entered values
+        let formSkills = document.getElementById("skills").value
+            .toLowerCase().split(",").map(s => s.trim()).filter(Boolean);
+        let userSkills = [...new Set([...resumeSkills, ...formSkills])];
+
+        let formExp = parseInt(document.getElementById("experience").value) || 0;
+        let userExp = Math.max(resumeExp, formExp);
+
+        // Fetch the target job
+        let jobId = localStorage.getItem("selectedJobId");
+        if (!jobId) {
+            showAnalysisError("No job selected. Please go back and select a job.");
+            return;
+        }
+
+        let jobs = await fetch("https://hirex-backend-sio8.onrender.com/jobs").then(r => r.json());
+        let job = jobs.find(j => j._id == jobId);
+
+        if (!job) {
+            showAnalysisError("Job not found. Please go back and reselect.");
+            return;
+        }
+
+        let jobSkills = job.skills.toLowerCase().split(",").map(s => s.trim());
+        let jobExp = parseInt(job.experience) || 0;
+
+        let matched = jobSkills.filter(skill => userSkills.map(s => s.toLowerCase()).includes(skill));
+        let missing  = jobSkills.filter(skill => !userSkills.map(s => s.toLowerCase()).includes(skill));
+
+        let skillScore = jobSkills.length > 0 ? (matched.length / jobSkills.length) * 100 : 0;
+        let expScore   = userExp >= jobExp ? 100 : jobExp > 0 ? (userExp / jobExp) * 100 : 100;
+
+        // Weighted final score (only if at least 1 skill matched)
+        let finalScore = 0;
+        if (matched.length > 0 && skillScore >= 30) {
+            finalScore = (0.7 * skillScore) + (0.3 * expScore);
+        }
+
+        // ✅ Store analyzed data
+        analyzedData = {
+            skills: userSkills,
+            experience: userExp,
+            match: parseFloat(finalScore.toFixed(1))
+        };
+
+        // ✅ Show result
+        let scoreColor = finalScore >= 70 ? "#22c55e" : finalScore >= 40 ? "#f59e0b" : "#ef4444";
+        document.getElementById("analysisBox").innerHTML = `
+            <div style="background:#1e293b; border-radius:10px; padding:14px; border-left:3px solid ${scoreColor};">
+                <h3 style="color:${scoreColor}; margin:0 0 10px;">
+                    Match Score: ${finalScore.toFixed(1)}%
+                </h3>
+                <p style="margin:4px 0; font-size:13px; color:#94a3b8;">
+                    <b style="color:#e2e8f0;">✅ Matched Skills:</b>
+                    ${matched.length > 0 ? matched.join(", ") : "None"}
+                </p>
+                <p style="margin:4px 0; font-size:13px; color:#94a3b8;">
+                    <b style="color:#e2e8f0;">⚠️ Missing Skills:</b>
+                    ${missing.length > 0 ? missing.join(", ") : "None"}
+                </p>
+                <p style="margin:4px 0; font-size:13px; color:#94a3b8;">
+                    <b style="color:#e2e8f0;">🕒 Experience:</b>
+                    ${userExp} yr${userExp !== 1 ? "s" : ""} / Required: ${jobExp} yr${jobExp !== 1 ? "s" : ""}
+                </p>
+            </div>
+        `;
+
+        // ✅ Enable submit button now that resume is analyzed
+        document.getElementById("submitBtn").disabled = false;
+
+    } catch (err) {
+        console.error("Resume analysis error:", err);
+        showAnalysisError("Could not read PDF. Please ensure it's a valid PDF file.");
+    }
+}
+
+function showAnalysisError(msg) {
+    document.getElementById("analysisBox").innerHTML =
+        `<p style="color:#ef4444; font-size:13px;">❌ ${msg}</p>`;
+    document.getElementById("submitBtn").disabled = true;
+    analyzedData = null;
+}
+
+// =============================================
+// ✅ SUBMIT APPLICATION
+// =============================================
+function submitApplication() {
+    let name       = document.getElementById("name").value.trim();
+    let email      = document.getElementById("email").value.trim();
+    let phone      = document.getElementById("phone").value.trim();
+    let city       = document.getElementById("city").value.trim();
+    let degree     = document.getElementById("degree").value.trim();
+    let experience = document.getElementById("experience").value.trim();
+    let skills     = document.getElementById("skills").value.trim();
+    let resumeFile = document.getElementById("resumeInput").files[0];
+    let jobId      = localStorage.getItem("selectedJobId");
+    let msg        = document.getElementById("msg");
+
+    // ✅ Guard: analyzedData must exist
+    if (!analyzedData) {
+        msg.style.color = "red";
+        msg.innerText = "Please upload and wait for resume analysis ❌";
+        return;
+    }
+
+    // ✅ Phone validation
+    if (!/^[0-9]{10}$/.test(phone)) {
+        msg.style.color = "red";
+        msg.innerText = "Enter a valid 10-digit phone number ❌";
+        return;
+    }
+
+    // ✅ All fields check
+    if (!name || !email || !phone || !city || !degree || !experience || !skills || !resumeFile) {
+        msg.style.color = "red";
+        msg.innerText = "Please fill all fields ❌";
+        return;
+    }
+
+    if (!jobId) {
+        msg.style.color = "red";
+        msg.innerText = "No job selected. Go back and select a job ❌";
+        return;
+    }
+
+    // ✅ Disable button to prevent double submit
+    let btn = document.getElementById("submitBtn");
+    btn.disabled = true;
+    btn.innerText = "Submitting...";
+
+    let formData = new FormData();
+    formData.append("name", name);
+    formData.append("email", email);
+    formData.append("phone", phone);
+    formData.append("city", city);
+    formData.append("degree", degree);
+    formData.append("skills", analyzedData.skills.join(", "));
+    formData.append("experience", analyzedData.experience);
+    formData.append("match", analyzedData.match);
+    formData.append("jobId", jobId);
+    formData.append("resume", resumeFile);
+
+    fetch("https://hirex-backend-sio8.onrender.com/apply-job", {
+        method: "POST",
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        msg.style.color = "green";
+        msg.innerText = data.message || "Applied successfully! ✅";
+
+        setTimeout(() => {
+            window.location.href = "dashboard.html";
+        }, 1200);
+    })
+    .catch(() => {
+        msg.style.color = "red";
+        msg.innerText = "Server error! Please try again ❌";
+        btn.disabled = false;
+        btn.innerText = "Submit Application";
+    });
+}
+
+// =============================================
+// ✅ SKILL EXTRACTION
+// =============================================
+const skillMap = {
+    html:       ["html", "html5"],
+    css:        ["css", "css3"],
+    javascript: ["javascript", "js"],
+    react:      ["react", "reactjs"],
+    nodejs:     ["node", "nodejs", "node.js"],
+    python:     ["python"],
+    java:       ["java"],
+    sql:        ["sql", "mysql", "postgresql"],
+    mongodb:    ["mongodb", "mongo"],
+    git:        ["git", "github"],
+    ds:         ["ds", "data structures", "dsa"],
+    typescript: ["typescript", "ts"],
+    php:        ["php"],
+    flutter:    ["flutter", "dart"],
+    kotlin:     ["kotlin"],
+    swift:      ["swift"],
+    aws:        ["aws", "amazon web services"],
+    docker:     ["docker"],
+    c:          ["c programming", "c language"],
+    cpp:        ["c++", "cpp"]
+};
+
+function extractSkills(text) {
+    text = text.toLowerCase();
+    let skills = [];
+    for (let skill in skillMap) {
+        for (let keyword of skillMap[skill]) {
+            let regex = new RegExp("\\b" + keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + "\\b", "i");
+            if (regex.test(text)) {
+                skills.push(skill);
+                break;
+            }
+        }
+    }
+    return skills;
+}
+
+function extractExperience(text) {
+    let match = text.match(/(\d+)\s*(year|years|yr|yrs)/i);
+    return match ? parseInt(match[1]) : 0;
+}
+
+// =============================================
+// ✅ LOGOUT
+// =============================================
+function logout() {
+    localStorage.clear();
+    window.location.href = "index.html";
+}
+</script>
+
 </body>
+</html>
