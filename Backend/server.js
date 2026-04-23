@@ -426,25 +426,31 @@ app.post("/resend-otp", async (req, res) => {
 // ==========================
 app.post("/google-login", async (req, res) => {
     try {
-        const { firstName, lastName, email } = req.body;
+        const { firstName, lastName, email, profilePic } = req.body;
         if (!email) return res.status(400).json({ message: "Email required" });
 
         let user = await User.findOne({ email: email.toLowerCase() });
         let isNewUser = false;
 
         if (!user) {
+            // Brand new user — create account and send to complete-profile
             isNewUser = true;
             user = new User({
                 email: email.toLowerCase(),
                 role: "job_seeker",
+                profileImage: profilePic || "",
                 profile: { firstName: firstName || "", lastName: lastName || "", phone: "", location: "" }
             });
             await user.save();
         } else {
-            // Only redirect to complete-profile if they never finished onboarding
-            // (i.e. role is still the default "job_seeker" AND no gender/type set)
-            const isGoogleAccount      = !user.passwordHash || user.passwordHash === "";
-            const isOnboardingIncomplete = !user.gender && !user.type;
+            // Existing user — only send to complete-profile if onboarding was NEVER finished.
+            // The schema defaults gender and type to "" so we must check for non-empty strings,
+            // not just truthiness — !user.gender is TRUE for both null AND "" which caused the bug.
+            const isGoogleAccount        = !user.passwordHash || user.passwordHash === "";
+            const hasGender              = user.gender && user.gender.trim() !== "";
+            const hasType                = user.type   && user.type.trim()   !== "";
+            const isOnboardingIncomplete = !hasGender && !hasType;
+
             if (isGoogleAccount && isOnboardingIncomplete) isNewUser = true;
         }
 
