@@ -441,9 +441,11 @@ app.post("/google-login", async (req, res) => {
             });
             await user.save();
         } else {
-            const isGoogleAccount  = !user.passwordHash || user.passwordHash === "";
-            const isProfileMissing = !user.profile?.location || !user.gender;
-            if (isGoogleAccount && isProfileMissing) isNewUser = true;
+            // Only redirect to complete-profile if they never finished onboarding
+            // (i.e. role is still the default "job_seeker" AND no gender/type set)
+            const isGoogleAccount      = !user.passwordHash || user.passwordHash === "";
+            const isOnboardingIncomplete = !user.gender && !user.type;
+            if (isGoogleAccount && isOnboardingIncomplete) isNewUser = true;
         }
 
         const userObj = user.toObject();
