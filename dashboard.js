@@ -244,9 +244,9 @@ function renderDashboard(content) {
                 ${statCard("Selected", selectedCount, "#22c55e")}
             </div>
 
-            <h3 style="color:#e2e8f0; margin-bottom:12px;">Recent Jobs</h3>
+            <h3 style="color:#e2e8f0; margin-bottom:12px;">Latest Jobs</h3>
             <div id="jobsContainer">
-                ${renderJobCards(allJobs.slice(0, 6))}
+                ${renderJobCards(getLatestJobs(6))}
             </div>
         </div>
     `;
@@ -261,12 +261,18 @@ function statCard(label, value, color) {
         </div>`;
 }
 
+function getLatestJobs(limit = 6) {
+    return [...allJobs]
+        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+        .slice(0, limit);
+}
+
 // =============================================
 // RENDER: JOBS LIST
 // =============================================
 function renderJobs(content) {
     const domains = getUniqueJobValues("domain");
-    const jobTypes = getUniqueJobValues("employmentType");
+    const jobTypes = getJobTypeFilterOptions();
 
     content.innerHTML = `
         <div class="jobs-page" style="padding:0 4px;">
@@ -328,6 +334,12 @@ const filterControlStyle = "width:100%;padding:12px 14px;border-radius:8px;borde
 
 function getUniqueJobValues(field) {
     return [...new Set(allJobs.map(job => (job[field] || "").trim()).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b));
+}
+
+function getJobTypeFilterOptions() {
+    const defaultTypes = ["Full-Time", "Part-Time", "Contract", "Internship"];
+    return [...new Set([...defaultTypes, ...getUniqueJobValues("employmentType")])]
         .sort((a, b) => a.localeCompare(b));
 }
 

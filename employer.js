@@ -138,6 +138,17 @@ function getJobCompany(job) {
     return job?.companyName || job?.company || "";
 }
 
+const jobDomainOptions = [
+    "Business & Management",
+    "Engineering & Core Technical",
+    "Finance",
+    "Healthcare",
+    "IT Finance",
+    "Other's",
+    "Sales & Marketing",
+    "Technology & IT"
+];
+
 async function loadEmployerApplications() {
     let allJobs = await fetchJson(`${BASE_URL}/jobs`);
     allJobs = Array.isArray(allJobs) ? allJobs : [];
@@ -273,7 +284,10 @@ function renderPostJob(content) {
                     <option>Full-Time</option><option>Part-Time</option>
                     <option>Contract</option><option>Internship</option>
                 </select>
-                <input id="pj_domain"      type="text"   placeholder="Domain (e.g. IT, Finance) *"   style="${inputStyle}">
+                <select id="pj_domain" style="${inputStyle}">
+                    <option value="">Select Domain *</option>
+                    ${jobDomainOptions.map(domain => `<option value="${escapeHtml(domain)}">${escapeHtml(domain)}</option>`).join("")}
+                </select>
                 <input id="pj_experience"  type="number" placeholder="Min Experience (years) *" min="0" style="${inputStyle}">
                 <input id="pj_skills"      type="text"   placeholder="Required Skills (comma-sep) *" style="${inputStyle}">
                 <textarea id="pj_desc"     rows="4"      placeholder="Job Description *"
