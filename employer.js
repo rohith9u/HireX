@@ -131,34 +131,114 @@ function getJobCompany(job) {
     return job?.companyName || job?.company || "";
 }
 
+async function loadEmployerApplications() {
+    let allJobs = await fetchJson(`${BASE_URL}/jobs`);
+    allJobs = Array.isArray(allJobs) ? allJobs : [];
+    employerJobs = allJobs.filter(j => (j.postedByEmail || "").toLowerCase() === employerEmail.toLowerCase());
+
+    let jobIds = employerJobs.map(j => j._id);
+    let allApps = await fetchJson(`${BASE_URL}/applications`);
+    allEmployerApps = Array.isArray(allApps)
+        ? allApps.filter(a => jobIds.includes(a.jobId?._id || a.jobId || ""))
+        : [];
+
+    allEmployerApps.sort((a, b) => new Date(b.appliedAt || b.createdAt || 0) - new Date(a.appliedAt || a.createdAt || 0));
+}
+
 // =============================================
 // RENDER: DASHBOARD
 // =============================================
 function renderDashboard(content) {
     content.innerHTML = `
-        <div style="padding:0 4px;">
+        <div style="padding:0 4px; max-width:980px;">
             <h2 id="welcomeUser" style="margin-bottom:20px; color:#e2e8f0;">Welcome Employer 👋</h2>
-            <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:24px;">
-                <div style="background:#1e293b; border-radius:12px; padding:16px; text-align:center; border-top:3px solid #6366f1;">
-                    <div style="font-size:28px; font-weight:700; color:#6366f1;" id="jobCount">0</div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; margin-bottom:16px;">
+                <div style="background:#1e293b; border-radius:10px; padding:18px; text-align:center; border-top:3px solid #6366f1;">
+                    <div style="font-size:26px; font-weight:700; color:#6366f1;" id="jobCount">0</div>
                     <div style="font-size:13px; color:#94a3b8; margin-top:4px;">Jobs Posted</div>
                 </div>
-                <div style="background:#1e293b; border-radius:12px; padding:16px; text-align:center; border-top:3px solid #22c55e;">
-                    <div style="font-size:28px; font-weight:700; color:#22c55e;" id="appCount">0</div>
+                <div style="background:#1e293b; border-radius:10px; padding:18px; text-align:center; border-top:3px solid #22c55e;">
+                    <div style="font-size:26px; font-weight:700; color:#22c55e;" id="appCount">0</div>
                     <div style="font-size:13px; color:#94a3b8; margin-top:4px;">Applicants</div>
                 </div>
             </div>
-            <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                <button class="apply-btn" onclick="showSection('post')" style="flex:1; min-width:140px;">
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px;">
+                <button type="button" class="apply-btn" onclick="showSection('post')" style="flex:1; min-width:180px; padding:12px;">
                     ➕ Post a Job
                 </button>
-                <button class="apply-btn" onclick="showSection('applicants')"
-                        style="flex:1; min-width:140px; background:linear-gradient(135deg,#0ea5e9,#0284c7);">
+                <button type="button" class="apply-btn" onclick="showSection('applicants')"
+                        style="flex:1; min-width:180px; padding:12px; background:linear-gradient(135deg,#0ea5e9,#0284c7);">
                     👥 View Applicants
                 </button>
             </div>
+            <div id="latestApplicantsPanel" class="job-card-premium" style="padding:18px;">
+                <p style="color:#94a3b8; margin:0; font-size:14px;">Loading latest applicants...</p>
+            </div>
         </div>`;
     loadStats();
+    renderLatestApplicantsPanel();
+}
+
+async function renderLatestApplicantsPanel() {
+    let panel = document.getElementById("latestApplicantsPanel");
+    if (!panel) return;
+
+    try {
+        await loadEmployerApplications();
+        let latest = allEmployerApps.slice(0, 4);
+
+        panel.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:14px;">
+                <h3 style="margin:0; color:#e2e8f0; font-size:16px;">Latest Applicants</h3>
+                <button type="button" onclick="showSection('applicants')"
+                        style="background:transparent; border:1px solid #334155; color:#94a3b8; border-radius:8px; padding:7px 12px; cursor:pointer; font-size:13px;">
+                    View All
+                </button>
+            </div>
+            ${latest.length === 0 ? `
+                <p style="color:#94a3b8; margin:0; font-size:14px;">No applicants yet.</p>
+            ` : `
+                <div style="display:grid; gap:10px;">
+                    ${latest.map(app => {
+                        let job = employerJobs.find(j => j._id === (app.jobId?._id || app.jobId));
+                        let status = app.status || "Applied";
+                        let statusColor = status === "Selected" ? "#22c55e"
+                            : status === "Rejected" ? "#ef4444"
+                            : status === "Interview" ? "#f59e0b"
+                            : status === "Screening" ? "#38bdf8"
+                            : "#94a3b8";
+
+                        return `
+                            <div style="display:grid; grid-template-columns:minmax(0,1fr) auto; gap:12px; align-items:center; background:#1e293b; border:1px solid rgba(255,255,255,0.07); border-radius:10px; padding:12px;">
+                                <div style="min-width:0;">
+                                    <div style="font-size:14px; color:#e2e8f0; font-weight:700; line-height:1.3;">${escapeHtml(app.name || "Applicant")}</div>
+                                    <div style="font-size:12px; color:#94a3b8; margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        ${escapeHtml(job?.title || "Job")} ${job ? "at " + escapeHtml(getJobCompany(job)) : ""}
+                                    </div>
+                                    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:7px;">
+                                        <span style="background:${statusColor}22; color:${statusColor}; border:1px solid ${statusColor}44; border-radius:20px; padding:2px 8px; font-size:11px; font-weight:600;">${escapeHtml(status)}</span>
+                                        <span style="color:#64748b; font-size:11px;">${new Date(app.appliedAt || app.createdAt).toLocaleDateString()}</span>
+                                    </div>
+                                </div>
+                                <button type="button" onclick="viewApplicantFromDashboard('${app._id}')"
+                                        style="background:#0f172a; border:1px solid #334155; color:#cbd5e1; border-radius:8px; padding:8px 13px; cursor:pointer; font-size:13px; font-weight:600;">
+                                    View
+                                </button>
+                            </div>`;
+                    }).join("")}
+                </div>
+            `}
+        `;
+    } catch (err) {
+        console.error("Latest applicants fetch failed:", err);
+        panel.innerHTML = `<p style="color:#ef4444; margin:0; font-size:14px;">Failed to load latest applicants.</p>`;
+    }
+}
+
+function viewApplicantFromDashboard(appId) {
+    window._highlightApplicantId = appId;
+    window._currentApplicantTab = "All";
+    showSection("applicants");
 }
 
 // =============================================
@@ -296,19 +376,8 @@ async function renderApplicants(content) {
     content.innerHTML = `<div style="padding:0 4px;"><p style="color:#94a3b8;">Loading applicants...</p></div>`;
 
     try {
-        // Step 1: get employer's jobs
-        let allJobs  = await fetchJson(`${BASE_URL}/jobs`);
-        allJobs = Array.isArray(allJobs) ? allJobs : [];
-        employerJobs = allJobs.filter(j => (j.postedByEmail||"").toLowerCase() === employerEmail.toLowerCase());
-        let jobIds   = employerJobs.map(j => j._id);
-
-        // Step 2: get all applications and filter
-        let allApps = await fetchJson(`${BASE_URL}/applications`);
-        allEmployerApps = Array.isArray(allApps)
-            ? allApps.filter(a => jobIds.includes(a.jobId?._id || a.jobId || ""))
-            : [];
-
-        renderApplicantTabs(content, "All");
+        await loadEmployerApplications();
+        renderApplicantTabs(content, window._currentApplicantTab || "All");
 
     } catch (err) {
         console.error("Applicants fetch failed:", err);
@@ -354,6 +423,8 @@ function renderApplicantTabs(content, activeTab) {
                 ${renderApplicantCards(filtered)}
             </div>
         </div>`;
+
+    highlightApplicantCard();
 }
 
 window._currentApplicantTab = "All";
@@ -361,6 +432,28 @@ window._currentApplicantTab = "All";
 function filterApplicantTab(tab) {
     window._currentApplicantTab = tab;
     renderApplicantTabs(document.getElementById("content"), tab);
+}
+
+function highlightApplicantCard() {
+    let appId = window._highlightApplicantId;
+    if (!appId) return;
+
+    setTimeout(() => {
+        let card = document.getElementById(`app-${appId}`);
+        if (!card) return;
+
+        card.scrollIntoView({ behavior: "smooth", block: "center" });
+        card.style.outline = "2px solid #f59e0b";
+        card.style.boxShadow = "0 0 0 5px rgba(245,158,11,0.18)";
+        card.style.transition = "box-shadow 0.25s ease, outline-color 0.25s ease";
+
+        setTimeout(() => {
+            card.style.outline = "";
+            card.style.boxShadow = "";
+        }, 2600);
+
+        window._highlightApplicantId = "";
+    }, 100);
 }
 
 function renderApplicantCards(apps) {
@@ -684,6 +777,7 @@ Object.assign(window, {
     submitJob,
     closeJob,
     filterApplicantTab,
+    viewApplicantFromDashboard,
     updateStatus,
     scheduleInterview,
     showEmpEditProfile,

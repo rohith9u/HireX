@@ -101,7 +101,7 @@ async function loadSavedJobs() {
         let res   = await fetch(`${BASE_URL}/saved-jobs/${currentUserId}`);
         let saved = await res.json();
         if (Array.isArray(saved)) {
-            savedJobIds = new Set(saved.map(s => s.jobId?._id || s.jobId));
+            savedJobIds = new Set(saved.map(s => String(s.jobId?._id || s.jobId || "")).filter(Boolean));
             savedJobs = saved
                 .map(s => s.jobId)
                 .filter(job => job && typeof job === "object");
@@ -117,6 +117,7 @@ async function loadSavedJobs() {
 // =============================================
 async function toggleSaveJob(jobId, btn) {
     if (!currentUserId) { showToast("Please log in to save jobs", "error"); return; }
+    jobId = String(jobId);
     try {
         let res  = await fetch(`${BASE_URL}/saved-jobs/toggle`, {
             method: "POST",
@@ -126,15 +127,15 @@ async function toggleSaveJob(jobId, btn) {
         let data = await res.json();
         if (data.saved) {
             savedJobIds.add(jobId);
-            let savedJob = allJobs.find(job => job._id === jobId);
-            if (savedJob && !savedJobs.some(job => job._id === jobId)) savedJobs.unshift(savedJob);
+            let savedJob = allJobs.find(job => String(job._id) === jobId);
+            if (savedJob && !savedJobs.some(job => String(job._id) === jobId)) savedJobs.unshift(savedJob);
             btn.innerHTML = `<i class="ri-bookmark-fill"></i>`;
             btn.title = "Unsave Job";
             btn.style.color = "#6366f1";
             showToast("Job saved ✅");
         } else {
             savedJobIds.delete(jobId);
-            savedJobs = savedJobs.filter(job => job._id !== jobId);
+            savedJobs = savedJobs.filter(job => String(job._id) !== jobId);
             btn.innerHTML = `<i class="ri-bookmark-line"></i>`;
             btn.title = "Save Job";
             btn.style.color = "#94a3b8";
@@ -646,6 +647,7 @@ async function renderProfile(content) {
         let user = await res.json();
 
         if (!user || user.error) throw new Error("Profile not found");
+        if (currentUserId) await loadSavedJobs();
 
         let firstName    = user.profile?.firstName || "";
         let lastName     = user.profile?.lastName  || "";
@@ -736,6 +738,8 @@ async function renderProfile(content) {
                 </div>
 
                 <!-- ── Resume ── -->
+                ${renderSavedJobsProfile()}
+
                 <div class="job-card-premium" style="margin-bottom:16px;">
                     <h3 style="color:#e2e8f0; margin:0 0 14px; font-size:15px;">📄 Resume</h3>
                     ${(() => {
@@ -844,9 +848,6 @@ async function renderProfile(content) {
                 </div>
             </div>`;
 
-        let profileWrap = content.firstElementChild;
-        if (profileWrap) profileWrap.insertAdjacentHTML("beforeend", renderSavedJobsProfile());
-
     } catch (err) {
         content.innerHTML = `<div style="padding:0 4px;">
             <h2 style="color:#e2e8f0;">My Profile</h2>
@@ -858,7 +859,7 @@ async function renderProfile(content) {
 function renderSavedJobsProfile() {
     let jobs = savedJobs.length
         ? savedJobs
-        : allJobs.filter(job => savedJobIds.has(job._id));
+        : allJobs.filter(job => savedJobIds.has(String(job._id)));
 
     return `
         <div class="job-card-premium" style="margin-bottom:16px;">
@@ -872,7 +873,7 @@ function renderSavedJobsProfile() {
                 <p style="color:#94a3b8;font-size:13px;margin:0;">No saved jobs yet.</p>
             ` : `
                 <div style="display:grid;gap:10px;">
-                    ${jobs.slice(0, 5).map(job => {
+                    ${jobs.map(job => {
                         let isClosed = job.status === "closed";
                         let alreadyApplied = allApplications.some(a => (a.jobId?._id || a.jobId) === job._id);
                         return `
@@ -908,7 +909,6 @@ function renderSavedJobsProfile() {
                             </div>`;
                     }).join("")}
                 </div>
-                ${jobs.length > 5 ? `<p style="font-size:12px;color:#94a3b8;margin:10px 0 0;">Showing 5 of ${jobs.length} saved jobs.</p>` : ""}
             `}
         </div>`;
 }
