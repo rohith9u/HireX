@@ -266,55 +266,55 @@ async function analyzeResume() {
             text += content.items.map(item => item.str).join(" ") + " ";
         }
 
-        // Extract skills & experience from resume text
-        let resumeSkills = extractSkills(text);
-        let resumeExp = extractExperience(text);
-
-        // Merge with manually entered values
-        let formSkills = document.getElementById("skills").value
-            .toLowerCase().split(",").map(s => s.trim()).filter(Boolean);
-        let userSkills = [...new Set([...resumeSkills, ...formSkills])];
-
-        let formExp = parseInt(document.getElementById("experience").value) || 0;
-        let userExp = Math.max(resumeExp, formExp);
-
-        // Fetch the target job
+        // ── Fetch target job ────────────────────────────
         let jobId = localStorage.getItem("selectedJobId");
-        if (!jobId) {
-            showAnalysisError("No job selected. Please go back and select a job.");
-            return;
-        }
+        if (!jobId) { showAnalysisError("No job selected. Please go back and select a job."); return; }
 
         let jobs = await fetch("https://hirex-backend-sio8.onrender.com/jobs").then(r => r.json());
-        let job = jobs.find(j => j._id == jobId);
+        let job  = jobs.find(j => j._id == jobId);
+        if (!job)  { showAnalysisError("Job not found. Please go back and reselect."); return; }
 
-        if (!job) {
-            showAnalysisError("Job not found. Please go back and reselect.");
-            return;
-        }
-
+        // ── Normalise job skills ─────────────────────────
         let jobSkills = Array.isArray(job.skills)
-            ? job.skills.map(s => s.trim().toLowerCase())
+            ? job.skills.map(s => s.trim().toLowerCase()).filter(Boolean)
             : (job.skills || "").toLowerCase().split(",").map(s => s.trim()).filter(Boolean);
+
         let jobExp = parseInt(job.experience) || 0;
 
-        let matched = jobSkills.filter(skill => userSkills.map(s => s.toLowerCase()).includes(skill));
-        let missing  = jobSkills.filter(skill => !userSkills.map(s => s.toLowerCase()).includes(skill));
+        // ── Extract from resume PDF text ─────────────────
+        let resumeExp = extractExperience(text);
 
+        // ── Pull manually-entered values ─────────────────
+        let formSkillsRaw = document.getElementById("skills").value || "";
+        let formExp       = parseInt(document.getElementById("experience").value) || 0;
+        let userExp       = Math.max(resumeExp, formExp);
+
+        // ── Match skills: PDF text + form input ──────────
+        let matchedFromPDF  = extractMatchedSkillsFromText(text, jobSkills);
+        let matchedFromForm = extractMatchedSkillsFromForm(formSkillsRaw, jobSkills);
+        let matchedSet      = new Set([...matchedFromPDF, ...matchedFromForm]);
+        let matched         = jobSkills.filter(s => matchedSet.has(s));
+        let missing         = jobSkills.filter(s => !matchedSet.has(s));
+
+        // ── Scoring: 70% skill, 30% experience ───────────
+        // Rule: if NO skills matched → score = 0
         let skillScore = jobSkills.length > 0 ? (matched.length / jobSkills.length) * 100 : 0;
-        let expScore   = userExp >= jobExp ? 100 : jobExp > 0 ? (userExp / jobExp) * 100 : 100;
+        let expScore   = jobExp === 0 ? 100
+                       : userExp >= jobExp ? 100
+                       : Math.round((userExp / jobExp) * 100);
 
-        // Weighted final score (only if at least 1 skill matched)
-        let finalScore = 0;
-        if (matched.length > 0 && skillScore >= 30) {
-            finalScore = (0.7 * skillScore) + (0.3 * expScore);
-        }
+        let finalScore = matched.length === 0 ? 0
+                       : parseFloat(((0.7 * skillScore) + (0.3 * expScore)).toFixed(1));
+
+        // ── Build combined skill list for submission ─────
+        let formSkillsArr = formSkillsRaw.toLowerCase().split(/[,;]+/).map(s => s.trim()).filter(Boolean);
+        let allUserSkills  = [...new Set([...matchedFromPDF, ...formSkillsArr])];
 
         // ✅ Store analyzed data
         analyzedData = {
-            skills: userSkills,
-            experience: userExp,
-            match: parseFloat(finalScore.toFixed(1)),
+            skills:        allUserSkills,
+            experience:    userExp,
+            match:         finalScore,
             matchedSkills: matched,
             missingSkills: missing
         };
@@ -324,7 +324,7 @@ async function analyzeResume() {
         document.getElementById("analysisBox").innerHTML = `
             <div style="background:#1e293b; border-radius:10px; padding:14px; border-left:3px solid ${scoreColor};">
                 <h3 style="color:${scoreColor}; margin:0 0 10px;">
-                    Match Score: ${finalScore.toFixed(1)}%
+                    Match Score: ${finalScore}%
                 </h3>
                 <p style="margin:4px 0; font-size:13px; color:#94a3b8;">
                     <b style="color:#e2e8f0;">✅ Matched Skills:</b>
@@ -442,47 +442,68 @@ function submitApplication() {
 // =============================================
 // ✅ SKILL EXTRACTION
 // =============================================
-const skillMap = {
-    html:       ["html", "html5"],
-    css:        ["css", "css3"],
-    javascript: ["javascript", "js"],
-    react:      ["react", "reactjs"],
-    nodejs:     ["node", "nodejs", "node.js"],
-    python:     ["python"],
-    java:       ["java"],
-    sql:        ["sql", "mysql", "postgresql"],
-    mongodb:    ["mongodb", "mongo"],
-    git:        ["git", "github"],
-    ds:         ["ds", "data structures", "dsa"],
-    typescript: ["typescript", "ts"],
-    php:        ["php"],
-    flutter:    ["flutter", "dart"],
-    kotlin:     ["kotlin"],
-    swift:      ["swift"],
-    aws:        ["aws", "amazon web services"],
-    docker:     ["docker"],
-    c:          ["c programming", "c language"],
-    cpp:        ["c++", "cpp"]
-};
+// =============================================
+// ✅ SMART SKILL EXTRACTION
+// Matches ANY skill from job description against
+// resume PDF text + manually entered skills
+// =============================================
 
-function extractSkills(text) {
-    text = text.toLowerCase();
-    let skills = [];
-    for (let skill in skillMap) {
-        for (let keyword of skillMap[skill]) {
-            let regex = new RegExp("\\b" + keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + "\\b", "i");
-            if (regex.test(text)) {
-                skills.push(skill);
+/**
+ * Given the full resume PDF text and a list of job-required skills,
+ * returns which of those job skills appear anywhere in the resume text.
+ * Uses flexible matching: ignores spaces/hyphens, checks substrings.
+ */
+function extractMatchedSkillsFromText(resumeText, jobSkills) {
+    let text = resumeText.toLowerCase().replace(/[-_]/g, " ");
+    let matched = [];
+    for (let skill of jobSkills) {
+        // Normalize the skill: lowercase, remove hyphens/underscores
+        let normalized = skill.toLowerCase().replace(/[-_]/g, " ").trim();
+        if (!normalized) continue;
+        // Escape regex special chars then do a word-boundary-ish check
+        let escaped = normalized.replace(/[.*+?^${}()|[\]\]/g, "\$&");
+        // Allow skill to appear as part of a word boundary (spaces, punctuation, start/end)
+        let regex = new RegExp("(?:^|[\s,;:/|(\[])(" + escaped + ")(?=$|[\s,;:/|)\]])", "i");
+        if (regex.test(text) || text.includes(normalized)) {
+            matched.push(skill);
+        }
+    }
+    return matched;
+}
+
+/**
+ * Also extract all skills user manually typed in the skills field,
+ * and check which job skills those cover.
+ */
+function extractMatchedSkillsFromForm(formSkillsRaw, jobSkills) {
+    let formSkills = formSkillsRaw.toLowerCase().replace(/[-_]/g, " ")
+        .split(/[,;]+/).map(s => s.trim()).filter(Boolean);
+    let matched = [];
+    for (let jobSkill of jobSkills) {
+        let jNorm = jobSkill.toLowerCase().replace(/[-_]/g, " ").trim();
+        for (let fs of formSkills) {
+            // Match if form skill contains job skill or job skill contains form skill
+            if (fs.includes(jNorm) || jNorm.includes(fs) || fs === jNorm) {
+                if (!matched.includes(jobSkill)) matched.push(jobSkill);
                 break;
             }
         }
     }
-    return skills;
+    return matched;
 }
 
 function extractExperience(text) {
-    let match = text.match(/(\d+)\s*(year|years|yr|yrs)/i);
-    return match ? parseInt(match[1]) : 0;
+    // Try patterns like "4 years", "4+ years", "4 yrs of experience"
+    let patterns = [
+        /(\d+)\+?\s*(?:years?|yrs?)\s+(?:of\s+)?(?:work\s+)?experience/i,
+        /experience[^\d]*(\d+)\+?\s*(?:years?|yrs?)/i,
+        /(\d+)\+?\s*(?:years?|yrs?)/i
+    ];
+    for (let pat of patterns) {
+        let m = text.match(pat);
+        if (m) return parseInt(m[1]);
+    }
+    return 0;
 }
 
 // =============================================

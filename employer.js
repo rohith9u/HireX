@@ -378,7 +378,8 @@ function renderApplicantCards(apps) {
         // Find job title
         let job = employerJobs.find(j => j._id === (app.jobId?._id || app.jobId));
 
-        let isPending = app.status === "Applied" || app.status === "Screening" || !app.status;
+        let canDecide = ["Applied", "Screening", "Interview"].includes(app.status) || !app.status;
+        let canScheduleInterview = app.status === "Applied" || app.status === "Screening" || !app.status;
 
         return `
             <div class="job-card-premium" style="margin-bottom:12px;" id="app-${app._id}">
@@ -415,18 +416,19 @@ function renderApplicantCards(apps) {
                     </span>
                 </div>
 
-                ${isPending ? `
+                ${canDecide ? `
                 <div style="display:flex; gap:8px; margin-top:14px; flex-wrap:wrap;">
                     <button type="button" class="apply-btn"
                             style="background:linear-gradient(135deg,#22c55e,#16a34a); flex:1; min-width:90px; font-size:13px;"
                             onclick="updateStatus('${app._id}', 'Selected', this)">
                         ✅ Select
                     </button>
+                    ${canScheduleInterview ? `
                     <button type="button" class="apply-btn"
                             style="background:linear-gradient(135deg,#f59e0b,#d97706); flex:1; min-width:90px; font-size:13px;"
                             onclick="scheduleInterview('${app._id}')">
                         📅 Interview
-                    </button>
+                    </button>` : ""}
                     <button type="button" class="apply-btn"
                             style="background:linear-gradient(135deg,#ef4444,#dc2626); flex:1; min-width:90px; font-size:13px;"
                             onclick="updateStatus('${app._id}', 'Rejected', this)">

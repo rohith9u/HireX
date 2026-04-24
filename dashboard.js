@@ -9,6 +9,7 @@ let currentUserId    = "";
 let allJobs          = [];
 let allApplications  = [];
 let savedJobIds      = new Set();
+let savedJobs        = [];
 
 // =============================================
 // ON LOAD
@@ -101,9 +102,13 @@ async function loadSavedJobs() {
         let saved = await res.json();
         if (Array.isArray(saved)) {
             savedJobIds = new Set(saved.map(s => s.jobId?._id || s.jobId));
+            savedJobs = saved
+                .map(s => s.jobId)
+                .filter(job => job && typeof job === "object");
         }
     } catch (err) {
         console.error("Saved jobs fetch failed:", err);
+        savedJobs = [];
     }
 }
 
@@ -121,12 +126,15 @@ async function toggleSaveJob(jobId, btn) {
         let data = await res.json();
         if (data.saved) {
             savedJobIds.add(jobId);
+            let savedJob = allJobs.find(job => job._id === jobId);
+            if (savedJob && !savedJobs.some(job => job._id === jobId)) savedJobs.unshift(savedJob);
             btn.innerHTML = `<i class="ri-bookmark-fill"></i>`;
             btn.title = "Unsave Job";
             btn.style.color = "#6366f1";
             showToast("Job saved ✅");
         } else {
             savedJobIds.delete(jobId);
+            savedJobs = savedJobs.filter(job => job._id !== jobId);
             btn.innerHTML = `<i class="ri-bookmark-line"></i>`;
             btn.title = "Save Job";
             btn.style.color = "#94a3b8";
@@ -836,12 +844,73 @@ async function renderProfile(content) {
                 </div>
             </div>`;
 
+        let profileWrap = content.firstElementChild;
+        if (profileWrap) profileWrap.insertAdjacentHTML("beforeend", renderSavedJobsProfile());
+
     } catch (err) {
         content.innerHTML = `<div style="padding:0 4px;">
             <h2 style="color:#e2e8f0;">My Profile</h2>
             <p style="color:#ef4444;">Failed to load profile. Please refresh.</p>
         </div>`;
     }
+}
+
+function renderSavedJobsProfile() {
+    let jobs = savedJobs.length
+        ? savedJobs
+        : allJobs.filter(job => savedJobIds.has(job._id));
+
+    return `
+        <div class="job-card-premium" style="margin-bottom:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px;">
+                <h3 style="color:#e2e8f0; margin:0; font-size:15px;">Saved Jobs</h3>
+                <span style="background:#6366f122;color:#818cf8;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid #6366f144;">
+                    ${jobs.length}
+                </span>
+            </div>
+            ${jobs.length === 0 ? `
+                <p style="color:#94a3b8;font-size:13px;margin:0;">No saved jobs yet.</p>
+            ` : `
+                <div style="display:grid;gap:10px;">
+                    ${jobs.slice(0, 5).map(job => {
+                        let isClosed = job.status === "closed";
+                        let alreadyApplied = allApplications.some(a => (a.jobId?._id || a.jobId) === job._id);
+                        return `
+                            <div style="background:#1e293b;border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:12px;">
+                                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px;">
+                                    <div style="min-width:0;">
+                                        <div style="font-size:14px;color:#e2e8f0;font-weight:600;line-height:1.35;">${escapeHtml(job.title || "Untitled Job")}</div>
+                                        <div style="font-size:12px;color:#94a3b8;margin-top:3px;">
+                                            ${escapeHtml(job.companyName || "")}${job.location ? " · " + escapeHtml(job.location) : ""}
+                                        </div>
+                                    </div>
+                                    <span style="background:${isClosed ? "#ef444422" : "#22c55e22"};color:${isClosed ? "#ef4444" : "#22c55e"};padding:3px 9px;border-radius:20px;font-size:11px;white-space:nowrap;">
+                                        ${isClosed ? "Closed" : "Open"}
+                                    </span>
+                                </div>
+                                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                    <button type="button" onclick="viewJobDetails('${job._id}')"
+                                            style="flex:1;min-width:110px;padding:8px 10px;border-radius:8px;background:#0f172a;color:#cbd5e1;border:1px solid #334155;font-size:13px;cursor:pointer;">
+                                        <i class="ri-eye-line"></i> View
+                                    </button>
+                                    ${!isClosed && !alreadyApplied ? `
+                                        <button type="button" onclick="goApply('${job._id}')"
+                                                style="flex:1;min-width:110px;padding:8px 10px;border-radius:8px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border:none;font-size:13px;font-weight:600;cursor:pointer;">
+                                            Apply
+                                        </button>
+                                    ` : `
+                                        <button type="button" disabled
+                                                style="flex:1;min-width:110px;padding:8px 10px;border-radius:8px;background:#0f172a;color:#64748b;border:1px solid #334155;font-size:13px;cursor:not-allowed;">
+                                            ${alreadyApplied ? "Applied" : "Closed"}
+                                        </button>
+                                    `}
+                                </div>
+                            </div>`;
+                    }).join("")}
+                </div>
+                ${jobs.length > 5 ? `<p style="font-size:12px;color:#94a3b8;margin:10px 0 0;">Showing 5 of ${jobs.length} saved jobs.</p>` : ""}
+            `}
+        </div>`;
 }
 
 // Profile field styled like the screenshot (readonly input box)
