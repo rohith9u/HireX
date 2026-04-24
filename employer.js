@@ -11,6 +11,7 @@ const BASE_URL = "https://hirex-backend-sio8.onrender.com";
 let employerEmail   = "";
 let employerJobs    = [];
 let allEmployerApps = [];
+let activeSection    = "dashboard";
 
 // =============================================
 // ON LOAD
@@ -23,7 +24,9 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     await loadEmployerProfile(employerEmail, sessionUser);
     await loadStats();
-    showSection("dashboard");
+    const returnSection = localStorage.getItem("employerReturnSection") || "dashboard";
+    localStorage.removeItem("employerReturnSection");
+    showSection(returnSection);
 });
 
 // =============================================
@@ -64,9 +67,15 @@ function showSection(section) {
     let content = document.getElementById("content");
     if (!content) return;
 
+    activeSection = section;
+
     document.querySelectorAll(".sidebar a").forEach(a => a.classList.remove("active"));
     let activeLink = document.querySelector(`.sidebar a[onclick*="'${section}'"]`);
     if (activeLink) activeLink.classList.add("active");
+
+    document.querySelectorAll(".bottom-nav .nav-item").forEach(n => {
+        n.classList.toggle("active", n.getAttribute("onclick")?.includes(`'${section}'`));
+    });
 
     switch (section) {
         case "dashboard":   renderDashboard(content);   break;
@@ -82,6 +91,44 @@ function navigateEmp(section, el) {
     document.querySelectorAll(".bottom-nav .nav-item").forEach(n => n.classList.remove("active"));
     if (el) el.classList.add("active");
     showSection(section);
+}
+
+async function fetchJson(url, options = {}) {
+    const res = await fetch(url, options);
+    const text = await res.text();
+    let data = {};
+
+    try {
+        data = text ? JSON.parse(text) : {};
+    } catch (err) {
+        throw new Error("Invalid server response");
+    }
+
+    if (!res.ok || data.error) {
+        throw new Error(data.error || "Request failed");
+    }
+
+    return data;
+}
+
+function setButtonLoading(button, isLoading, loadingText) {
+    if (!button) return;
+    if (isLoading) {
+        button.dataset.originalText = button.innerHTML;
+        button.innerHTML = loadingText;
+        button.disabled = true;
+        button.style.opacity = "0.65";
+        button.style.pointerEvents = "none";
+    } else {
+        button.innerHTML = button.dataset.originalText || button.innerHTML;
+        button.disabled = false;
+        button.style.opacity = "";
+        button.style.pointerEvents = "";
+    }
+}
+
+function getJobCompany(job) {
+    return job?.companyName || job?.company || "";
 }
 
 // =============================================
@@ -136,7 +183,7 @@ function renderPostJob(content) {
                 <input id="pj_skills"      type="text"   placeholder="Required Skills (comma-sep) *" style="${inputStyle}">
                 <textarea id="pj_desc"     rows="4"      placeholder="Job Description *"
                           style="${inputStyle} resize:vertical;"></textarea>
-                <button class="apply-btn" style="width:100%;" onclick="submitJob()">🚀 Post Job</button>
+                <button type="button" class="apply-btn" style="width:100%;" onclick="submitJob(this)">🚀 Post Job</button>
                 <p id="postJobMsg" style="margin:0; font-size:13px; text-align:center;"></p>
             </div>
         </div>`;
@@ -144,7 +191,7 @@ function renderPostJob(content) {
 
 const inputStyle = "padding:10px 14px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#e2e8f0;font-size:14px;width:100%;box-sizing:border-box;";
 
-async function submitJob() {
+async function submitJob(button) {
     let title      = document.getElementById("pj_title").value.trim();
     let company    = document.getElementById("pj_company").value.trim();
     let location   = document.getElementById("pj_location").value.trim();
@@ -161,21 +208,22 @@ async function submitJob() {
     }
 
     msg.style.color = "#94a3b8"; msg.textContent = "Posting...";
+    setButtonLoading(button, true, "Posting...");
 
     try {
-        let res  = await fetch(`${BASE_URL}/post-job`, {
+        let data = await fetchJson(`${BASE_URL}/post-job`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ title, company, location, salary, jobType, domain, experience, skills, description, email: employerEmail })
         });
-        let data = await res.json();
         if (data.error) { msg.style.color = "#ef4444"; msg.textContent = data.error; return; }
         msg.style.color = "#22c55e"; msg.textContent = "Job posted successfully ✅";
         showToast("Job posted ✅", "success");
         loadStats();
         setTimeout(() => showSection("jobs"), 1200);
     } catch (err) {
-        msg.style.color = "#ef4444"; msg.textContent = "Server error. Please try again.";
+        msg.style.color = "#ef4444"; msg.textContent = err.message || "Server error. Please try again.";
+        setButtonLoading(button, false);
     }
 }
 
@@ -185,8 +233,8 @@ async function submitJob() {
 async function renderMyJobs(content) {
     content.innerHTML = `<div style="padding:0 4px;"><p style="color:#94a3b8;">Loading jobs...</p></div>`;
     try {
-        let res  = await fetch(`${BASE_URL}/jobs`);
-        let jobs = await res.json();
+        let jobs = await fetchJson(`${BASE_URL}/jobs`);
+        jobs = Array.isArray(jobs) ? jobs : [];
         employerJobs = jobs.filter(j => (j.postedByEmail||"").toLowerCase() === employerEmail.toLowerCase());
 
         if (employerJobs.length === 0) {
@@ -204,7 +252,7 @@ async function renderMyJobs(content) {
                         <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
                             <div style="flex:1;">
                                 <h3 style="margin:0 0 6px;">${escapeHtml(job.title)}</h3>
-                                <p style="margin:2px 0;font-size:13px;color:#94a3b8;"><i class="ri-building-line"></i> ${escapeHtml(job.companyName)}</p>
+                                <p style="margin:2px 0;font-size:13px;color:#94a3b8;"><i class="ri-building-line"></i> ${escapeHtml(getJobCompany(job))}</p>
                                 <p style="margin:2px 0;font-size:13px;color:#94a3b8;"><i class="ri-map-pin-line"></i> ${escapeHtml(job.location)}</p>
                                 <p style="margin:2px 0;font-size:12px;color:#64748b;">🛠️ ${Array.isArray(job.skills) ? job.skills.join(", ") : job.skills}</p>
                                 <p style="margin:2px 0;font-size:12px;color:#64748b;">📅 Posted: ${new Date(job.createdAt).toLocaleDateString()}</p>
@@ -214,7 +262,7 @@ async function renderMyJobs(content) {
                             </span>
                         </div>
                         ${job.status === "open" ? `
-                        <button class="apply-btn" onclick="closeJob('${job._id}')"
+                        <button type="button" class="apply-btn" onclick="closeJob('${job._id}', this)"
                                 style="margin-top:12px; width:100%; background:linear-gradient(135deg,#ef4444,#dc2626);">
                             🔒 Close Job
                         </button>` : ""}
@@ -227,15 +275,18 @@ async function renderMyJobs(content) {
     }
 }
 
-async function closeJob(jobId) {
+async function closeJob(jobId, button) {
+    setButtonLoading(button, true, "Closing...");
     try {
-        let res  = await fetch(`${BASE_URL}/close-job/${jobId}`, { method: "PUT" });
-        let data = await res.json();
+        let data = await fetchJson(`${BASE_URL}/close-job/${jobId}`, { method: "PUT" });
         if (data.error) { showToast(data.error, "error"); return; }
         showToast("Job closed ✅", "success");
         renderMyJobs(document.getElementById("content"));
         loadStats();
-    } catch (err) { showToast("Server error ❌", "error"); }
+    } catch (err) {
+        showToast((err.message || "Server error") + " ❌", "error");
+        setButtonLoading(button, false);
+    }
 }
 
 // =============================================
@@ -246,14 +297,13 @@ async function renderApplicants(content) {
 
     try {
         // Step 1: get employer's jobs
-        let jobsRes  = await fetch(`${BASE_URL}/jobs`);
-        let allJobs  = await jobsRes.json();
+        let allJobs  = await fetchJson(`${BASE_URL}/jobs`);
+        allJobs = Array.isArray(allJobs) ? allJobs : [];
         employerJobs = allJobs.filter(j => (j.postedByEmail||"").toLowerCase() === employerEmail.toLowerCase());
         let jobIds   = employerJobs.map(j => j._id);
 
         // Step 2: get all applications and filter
-        let appsRes = await fetch(`${BASE_URL}/applications`);
-        let allApps = await appsRes.json();
+        let allApps = await fetchJson(`${BASE_URL}/applications`);
         allEmployerApps = Array.isArray(allApps)
             ? allApps.filter(a => jobIds.includes(a.jobId?._id || a.jobId || ""))
             : [];
@@ -290,7 +340,7 @@ function renderApplicantTabs(content, activeTab) {
                 ${tabs.map(tab => {
                     let isActive = tab === activeTab;
                     let col = tabColors[tab];
-                    return `<button onclick="filterApplicantTab('${tab}')"
+                    return `<button type="button" onclick="filterApplicantTab('${tab}')"
                         style="padding:6px 14px; border-radius:20px; font-size:12px; font-weight:600; cursor:pointer;
                                border:1px solid ${col}44;
                                background:${isActive ? col+"33" : "transparent"};
@@ -336,7 +386,7 @@ function renderApplicantCards(apps) {
                     <div style="flex:1;">
                         <h3 style="margin:0 0 4px;">${escapeHtml(app.name || "Applicant")}</h3>
                         ${job ? `<p style="margin:2px 0;font-size:12px;color:#6366f1;font-weight:500;">
-                            📌 ${escapeHtml(job.title)} @ ${escapeHtml(job.companyName)}</p>` : ""}
+                            📌 ${escapeHtml(job.title)} @ ${escapeHtml(getJobCompany(job))}</p>` : ""}
                         <p style="margin:2px 0; font-size:13px; color:#94a3b8;">📧 ${escapeHtml(app.email||"")}</p>
                         <p style="margin:2px 0; font-size:13px; color:#94a3b8;">📞 ${escapeHtml(app.phone||"")}</p>
                         <p style="margin:2px 0; font-size:13px; color:#94a3b8;">🎓 ${escapeHtml(app.degree||"")}${app.city ? " | 🏙️ " + escapeHtml(app.city) : ""}</p>
@@ -367,19 +417,19 @@ function renderApplicantCards(apps) {
 
                 ${isPending ? `
                 <div style="display:flex; gap:8px; margin-top:14px; flex-wrap:wrap;">
-                    <button class="apply-btn"
+                    <button type="button" class="apply-btn"
                             style="background:linear-gradient(135deg,#22c55e,#16a34a); flex:1; min-width:90px; font-size:13px;"
-                            onclick="updateStatus('${app._id}', 'Selected')">
+                            onclick="updateStatus('${app._id}', 'Selected', this)">
                         ✅ Select
                     </button>
-                    <button class="apply-btn"
+                    <button type="button" class="apply-btn"
                             style="background:linear-gradient(135deg,#f59e0b,#d97706); flex:1; min-width:90px; font-size:13px;"
                             onclick="scheduleInterview('${app._id}')">
                         📅 Interview
                     </button>
-                    <button class="apply-btn"
+                    <button type="button" class="apply-btn"
                             style="background:linear-gradient(135deg,#ef4444,#dc2626); flex:1; min-width:90px; font-size:13px;"
-                            onclick="updateStatus('${app._id}', 'Rejected')">
+                            onclick="updateStatus('${app._id}', 'Rejected', this)">
                         ❌ Reject
                     </button>
                 </div>` : ""}
@@ -390,15 +440,15 @@ function renderApplicantCards(apps) {
 // =============================================
 // UPDATE APPLICATION STATUS
 // =============================================
-async function updateStatus(appId, status) {
+async function updateStatus(appId, status, button) {
     // status must be: Applied | Screening | Interview | Selected | Rejected
+    setButtonLoading(button, true, status === "Selected" ? "Selecting..." : "Rejecting...");
     try {
-        let res  = await fetch(`${BASE_URL}/update-status`, {
+        let data = await fetchJson(`${BASE_URL}/update-status`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ appId, status })
         });
-        let data = await res.json();
 
         if (data.error) { showToast(data.error + " ❌", "error"); return; }
 
@@ -414,7 +464,8 @@ async function updateStatus(appId, status) {
 
     } catch (err) {
         console.error("Status update failed:", err);
-        showToast("Server error ❌", "error");
+        showToast((err.message || "Server error") + " ❌", "error");
+        setButtonLoading(button, false);
     }
 }
 
@@ -422,7 +473,12 @@ async function updateStatus(appId, status) {
 // SCHEDULE INTERVIEW
 // =============================================
 function scheduleInterview(appId) {
+    if (!appId) {
+        showToast("Application not found âŒ", "error");
+        return;
+    }
     localStorage.setItem("selectedAppId", appId);
+    localStorage.setItem("employerReturnSection", activeSection || "applicants");
     window.location.href = "interview.html";
 }
 
@@ -518,8 +574,8 @@ async function renderProfile(content) {
                         </select>
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;">
-                        <button onclick="closeEmpEdit()" style="padding:10px;border-radius:8px;background:#1e293b;color:#94a3b8;border:1px solid #334155;cursor:pointer;">Cancel</button>
-                        <button onclick="saveEmpProfile()" style="padding:10px;border-radius:8px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border:none;cursor:pointer;font-weight:600;">Save</button>
+                        <button type="button" onclick="closeEmpEdit()" style="padding:10px;border-radius:8px;background:#1e293b;color:#94a3b8;border:1px solid #334155;cursor:pointer;">Cancel</button>
+                        <button type="button" onclick="saveEmpProfile(this)" style="padding:10px;border-radius:8px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border:none;cursor:pointer;font-weight:600;">Save</button>
                     </div>
                     <p id="empEditMsg" style="margin-top:10px;font-size:13px;text-align:center;"></p>
                 </div>
@@ -552,7 +608,7 @@ function closeEmpEdit() {
     if (m) m.style.display = "none";
 }
 
-async function saveEmpProfile() {
+async function saveEmpProfile(button) {
     let firstName = document.getElementById("ep2_firstName").value.trim();
     let lastName  = document.getElementById("ep2_lastName").value.trim();
     let contact   = document.getElementById("ep2_phone").value.trim();
@@ -562,14 +618,14 @@ async function saveEmpProfile() {
 
     if (!firstName) { msg.style.color = "#ef4444"; msg.textContent = "First name required."; return; }
     msg.style.color = "#94a3b8"; msg.textContent = "Saving...";
+    setButtonLoading(button, true, "Saving...");
 
     try {
-        let res  = await fetch(`${BASE_URL}/update-profile`, {
+        let data = await fetchJson(`${BASE_URL}/update-profile`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email: employerEmail, firstName, lastName, contact, city, gender })
         });
-        let data = await res.json();
         if (data.error) { msg.style.color = "#ef4444"; msg.textContent = data.error; return; }
         msg.style.color = "#22c55e"; msg.textContent = "Profile updated ✅";
         let su = JSON.parse(localStorage.getItem("loggedInUser")||"{}");
@@ -577,7 +633,8 @@ async function saveEmpProfile() {
         localStorage.setItem("loggedInUser", JSON.stringify(su));
         setTimeout(() => { closeEmpEdit(); renderProfile(document.getElementById("content")); }, 900);
     } catch (err) {
-        msg.style.color = "#ef4444"; msg.textContent = "Save failed.";
+        msg.style.color = "#ef4444"; msg.textContent = err.message || "Save failed.";
+        setButtonLoading(button, false);
     }
 }
 
@@ -618,3 +675,18 @@ function escapeHtml(str) {
     div.appendChild(document.createTextNode(str || ""));
     return div.innerHTML;
 }
+
+Object.assign(window, {
+    showSection,
+    navigateEmp,
+    submitJob,
+    closeJob,
+    filterApplicantTab,
+    updateStatus,
+    scheduleInterview,
+    showEmpEditProfile,
+    closeEmpEdit,
+    saveEmpProfile,
+    toggleNotif,
+    logout
+});

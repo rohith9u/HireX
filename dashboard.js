@@ -1,96 +1,87 @@
 // =============================================
-// ✅ DASHBOARD.JS — Fixed & Fully Integrated
+// ✅ DASHBOARD.JS — Updated & Fully Integrated
 // =============================================
- 
+
 const BASE_URL = "https://hirex-backend-sio8.onrender.com";
- 
+
 let currentUserEmail = "";
 let currentUserId    = "";
 let allJobs          = [];
 let allApplications  = [];
- 
+let savedJobIds      = new Set();
+
 // =============================================
 // ON LOAD
 // =============================================
 window.addEventListener("DOMContentLoaded", async () => {
- 
-    // ✅ Session guard
+
     let sessionUser = JSON.parse(localStorage.getItem("loggedInUser") || "null");
     if (!sessionUser) {
         window.location.replace("index.html");
         return;
     }
- 
+
     currentUserEmail = localStorage.getItem("userEmail") || sessionUser.email || "";
- 
-    // ✅ Fetch real profile from backend
+
     await loadUserProfile(sessionUser);
- 
-    // ✅ Pre-load data
     await Promise.all([loadJobs(), loadApplications()]);
- 
-    // ✅ Show default section
+
+    if (currentUserId) {
+        await loadSavedJobs();
+        loadNotifications();
+    }
+
     const hash = window.location.hash.replace("#", "") || "dashboard";
     showSection(hash);
- 
-    // ✅ Load notifications (requires userId)
-    if (currentUserId) loadNotifications();
 });
- 
+
 // =============================================
 // LOAD USER PROFILE
 // =============================================
 async function loadUserProfile(sessionUser) {
     let firstName = sessionUser.firstName || sessionUser?.profile?.firstName || "";
- 
+
     try {
         let res  = await fetch(`${BASE_URL}/profile/${currentUserEmail}`);
         let user = await res.json();
- 
+
         if (user && !user.error) {
-            // ✅ Server stores name in user.profile.firstName
-            firstName = user.profile?.firstName || user.firstName || firstName;
+            firstName     = user.profile?.firstName || user.firstName || firstName;
             currentUserId = user._id || "";
- 
-            // Cache back
             sessionUser.firstName = firstName;
             localStorage.setItem("loggedInUser", JSON.stringify(sessionUser));
         }
     } catch (err) {
         console.error("Profile fetch failed:", err);
     }
- 
-    // ✅ Update topbar name
+
     let topbarEl = document.getElementById("topbarName");
     if (topbarEl) topbarEl.textContent = firstName || "User";
- 
-    // ✅ Update welcome (set later when section renders)
     window._welcomeName = firstName || "User";
 }
- 
+
 // =============================================
 // LOAD JOBS
 // =============================================
 async function loadJobs() {
     try {
-        let res  = await fetch(`${BASE_URL}/jobs`);
-        allJobs  = await res.json();
+        let res = await fetch(`${BASE_URL}/jobs`);
+        allJobs = await res.json();
         if (!Array.isArray(allJobs)) allJobs = [];
     } catch (err) {
         console.error("Jobs fetch failed:", err);
         allJobs = [];
     }
 }
- 
+
 // =============================================
-// LOAD APPLICATIONS (filter client-side by email)
+// LOAD APPLICATIONS
 // =============================================
 async function loadApplications() {
     try {
         let res  = await fetch(`${BASE_URL}/applications`);
         let apps = await res.json();
         if (!Array.isArray(apps)) apps = [];
-        // ✅ Filter to only this user's applications
         allApplications = apps.filter(a =>
             (a.email || "").toLowerCase() === currentUserEmail.toLowerCase()
         );
@@ -99,23 +90,69 @@ async function loadApplications() {
         allApplications = [];
     }
 }
- 
+
+// =============================================
+// LOAD SAVED JOBS
+// =============================================
+async function loadSavedJobs() {
+    if (!currentUserId) return;
+    try {
+        let res   = await fetch(`${BASE_URL}/saved-jobs/${currentUserId}`);
+        let saved = await res.json();
+        if (Array.isArray(saved)) {
+            savedJobIds = new Set(saved.map(s => s.jobId?._id || s.jobId));
+        }
+    } catch (err) {
+        console.error("Saved jobs fetch failed:", err);
+    }
+}
+
+// =============================================
+// TOGGLE SAVE JOB
+// =============================================
+async function toggleSaveJob(jobId, btn) {
+    if (!currentUserId) { showToast("Please log in to save jobs", "error"); return; }
+    try {
+        let res  = await fetch(`${BASE_URL}/saved-jobs/toggle`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: currentUserId, jobId })
+        });
+        let data = await res.json();
+        if (data.saved) {
+            savedJobIds.add(jobId);
+            btn.innerHTML = `<i class="ri-bookmark-fill"></i>`;
+            btn.title = "Unsave Job";
+            btn.style.color = "#6366f1";
+            showToast("Job saved ✅");
+        } else {
+            savedJobIds.delete(jobId);
+            btn.innerHTML = `<i class="ri-bookmark-line"></i>`;
+            btn.title = "Save Job";
+            btn.style.color = "#94a3b8";
+            showToast("Job removed from saved");
+        }
+    } catch (err) {
+        showToast("Could not save job", "error");
+    }
+}
+
 // =============================================
 // LOAD NOTIFICATIONS
 // =============================================
 async function loadNotifications() {
     if (!currentUserId) return;
     try {
-        let res   = await fetch(`${BASE_URL}/notifications/${currentUserId}`);
+        let res    = await fetch(`${BASE_URL}/notifications/${currentUserId}`);
         let notifs = await res.json();
         if (!Array.isArray(notifs)) return;
- 
+
         let dot = document.getElementById("notifDot");
         if (dot) dot.style.display = notifs.length > 0 ? "block" : "none";
- 
+
         let list = document.getElementById("notifList");
         if (!list) return;
- 
+
         if (notifs.length === 0) {
             list.innerHTML = `<p style="color:#94a3b8; font-size:13px;">No new notifications</p>`;
             return;
@@ -130,91 +167,74 @@ async function loadNotifications() {
                 </span>
             </div>
         `).join("");
-    } catch (err) {
-        console.error("Notifications fetch failed:", err);
-    }
+    } catch (err) {}
 }
- 
+
 async function markNotifRead(id) {
     try {
         await fetch(`${BASE_URL}/notifications/read/${id}`, { method: "POST" });
         loadNotifications();
     } catch (err) {}
 }
- 
+
 function toggleNotif() {
     let box = document.getElementById("notifBox");
     if (!box) return;
     box.style.display = box.style.display === "block" ? "none" : "block";
 }
- 
-// close notif box when clicking elsewhere
+
 document.addEventListener("click", (e) => {
-    let box    = document.getElementById("notifBox");
-    let bell   = e.target.closest(".notif-wrapper");
+    let box  = document.getElementById("notifBox");
+    let bell = e.target.closest(".notif-wrapper");
     if (box && !bell && !box.contains(e.target)) box.style.display = "none";
 });
- 
+
 // =============================================
-// SHOW SECTION — renders content into #content
+// SHOW SECTION
 // =============================================
 function showSection(section) {
     let content = document.getElementById("content");
     if (!content) return;
- 
-    // ✅ Highlight active sidebar item
+
     document.querySelectorAll(".sidebar a").forEach(a => a.classList.remove("active"));
     let activeLink = document.querySelector(`.sidebar a[onclick*="'${section}'"]`);
     if (activeLink) activeLink.classList.add("active");
- 
-    // ✅ Highlight active bottom nav item
+
     document.querySelectorAll(".bottom-nav .nav-item").forEach(el => el.classList.remove("active"));
     let activeNav = document.querySelector(`.bottom-nav .nav-item[onclick*="'${section}'"]`);
     if (activeNav) activeNav.classList.add("active");
- 
+
     switch (section) {
-        case "dashboard":
-            renderDashboard(content);
-            break;
-        case "jobs":
-            renderJobs(content);
-            break;
-        case "applications":
-            renderApplications(content);
-            break;
-        case "profile":
-            renderProfile(content);
-            break;
-        default:
-            renderDashboard(content);
+        case "dashboard":    renderDashboard(content); break;
+        case "jobs":         renderJobs(content); break;
+        case "applications": renderApplications(content); break;
+        case "profile":      renderProfile(content); break;
+        default:             renderDashboard(content);
     }
 }
- 
-// alias for bottom nav
+
 function navigate(section) { showSection(section); }
- 
+
 // =============================================
 // RENDER: DASHBOARD HOME
 // =============================================
 function renderDashboard(content) {
-    let appliedCount  = allApplications.length;
-    let pendingCount  = allApplications.filter(a => a.status === "Applied" || a.status === "Screening").length;
+    let appliedCount   = allApplications.length;
     let interviewCount = allApplications.filter(a => a.status === "Interview").length;
     let selectedCount  = allApplications.filter(a => a.status === "Selected").length;
- 
+
     content.innerHTML = `
         <div style="padding: 0 4px;">
             <h2 id="welcomeUser" style="margin-bottom:20px; color:#e2e8f0;">
                 Welcome ${escapeHtml(window._welcomeName || "User")} 👋
             </h2>
- 
+
             <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:24px;">
                 ${statCard("Applied", appliedCount, "#6366f1")}
-                ${statCard("Pending", pendingCount, "#f59e0b")}
                 ${statCard("Interviews", interviewCount, "#38bdf8")}
                 ${statCard("Selected", selectedCount, "#22c55e")}
             </div>
- 
+
             <h3 style="color:#e2e8f0; margin-bottom:12px;">Recent Jobs</h3>
             <div id="jobsContainer">
                 ${renderJobCards(allJobs.slice(0, 6))}
@@ -222,7 +242,7 @@ function renderDashboard(content) {
         </div>
     `;
 }
- 
+
 function statCard(label, value, color) {
     return `
         <div style="background:#1e293b; border-radius:12px; padding:16px; text-align:center;
@@ -231,7 +251,7 @@ function statCard(label, value, color) {
             <div style="font-size:13px; color:#94a3b8; margin-top:4px;">${label}</div>
         </div>`;
 }
- 
+
 // =============================================
 // RENDER: JOBS LIST
 // =============================================
@@ -249,7 +269,7 @@ function renderJobs(content) {
         </div>
     `;
 }
- 
+
 function filterJobs(query) {
     let q = query.toLowerCase();
     let filtered = allJobs.filter(j =>
@@ -261,18 +281,26 @@ function filterJobs(query) {
     let container = document.getElementById("jobsContainer");
     if (container) container.innerHTML = renderJobCards(filtered);
 }
- 
+
+// =============================================
+// RENDER JOB CARDS (with View + Save buttons)
+// =============================================
 function renderJobCards(jobs) {
     if (!jobs || jobs.length === 0) {
         return `<p style="color:#94a3b8;">No jobs available right now.</p>`;
     }
     return jobs.map(job => {
         let skillsDisplay = Array.isArray(job.skills) ? job.skills.join(", ") : (job.skills || "");
-        let statusBadge = job.status === "closed"
+        let isClosed = job.status === "closed";
+        let isSaved  = savedJobIds.has(job._id);
+        let alreadyApplied = allApplications.some(a => (a.jobId?._id || a.jobId) === job._id);
+
+        let statusBadge = isClosed
             ? `<span style="background:#ef444422; color:#ef4444; padding:2px 10px; border-radius:20px; font-size:11px;">Closed</span>`
             : `<span style="background:#22c55e22; color:#22c55e; padding:2px 10px; border-radius:20px; font-size:11px;">Open</span>`;
+
         return `
-            <div class="job-card-premium">
+            <div class="job-card-premium" style="position:relative;">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px;">
                     <div style="flex:1;">
                         <h3 style="margin:0 0 6px;">${escapeHtml(job.title || "Untitled")}</h3>
@@ -286,77 +314,321 @@ function renderJobCards(jobs) {
                         ${job.employmentType ? `<p style="margin:3px 0; font-size:13px; color:#94a3b8;"><i class="ri-briefcase-line"></i> ${escapeHtml(job.employmentType)}</p>` : ""}
                         ${skillsDisplay ? `<p style="font-size:12px; color:#64748b; margin-top:6px;">🛠️ ${escapeHtml(skillsDisplay)}</p>` : ""}
                     </div>
-                    ${statusBadge}
+                    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+                        ${statusBadge}
+                        <button
+                            id="save-btn-${job._id}"
+                            title="${isSaved ? 'Unsave Job' : 'Save Job'}"
+                            onclick="handleSaveJob('${job._id}', this)"
+                            style="background:none; border:none; cursor:pointer; font-size:18px;
+                                   color:${isSaved ? '#6366f1' : '#94a3b8'}; padding:2px 4px;">
+                            <i class="${isSaved ? 'ri-bookmark-fill' : 'ri-bookmark-line'}"></i>
+                        </button>
+                    </div>
                 </div>
-                ${job.status !== "closed"
-                    ? `<button class="apply-btn" style="margin-top:12px;" onclick="goApply('${job._id}')">Apply Now</button>`
-                    : `<button class="apply-btn" style="margin-top:12px; opacity:0.4; cursor:not-allowed;" disabled>Closed</button>`
-                }
+                <div style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap;">
+                    <button class="apply-btn" style="flex:1; min-width:100px;"
+                            onclick="viewJobDetails('${job._id}')">
+                        <i class="ri-eye-line"></i> View Details
+                    </button>
+                    ${!isClosed
+                        ? (alreadyApplied
+                            ? `<button class="apply-btn" style="flex:1; min-width:100px; background:linear-gradient(135deg,#22c55e,#16a34a); cursor:default;" disabled>
+                                ✅ Applied
+                               </button>`
+                            : `<button class="apply-btn" style="flex:1; min-width:100px;"
+                                onclick="goApply('${job._id}')">
+                                Apply Now
+                               </button>`)
+                        : `<button class="apply-btn" style="flex:1; min-width:100px; opacity:0.4; cursor:not-allowed;" disabled>Closed</button>`
+                    }
+                </div>
             </div>`;
     }).join("");
 }
- 
+
+function handleSaveJob(jobId, btn) {
+    toggleSaveJob(jobId, btn);
+}
+
 // =============================================
-// RENDER: MY APPLICATIONS
+// VIEW JOB DETAILS MODAL
 // =============================================
-function renderApplications(content) {
+function viewJobDetails(jobId) {
+    let job = allJobs.find(j => j._id === jobId);
+    if (!job) return;
+
+    let skillsDisplay = Array.isArray(job.skills) ? job.skills.join(", ") : (job.skills || "None");
+    let isClosed       = job.status === "closed";
+    let alreadyApplied = allApplications.some(a => (a.jobId?._id || a.jobId) === job._id);
+    let isSaved        = savedJobIds.has(job._id);
+
+    // Remove existing modal if any
+    let existing = document.getElementById("jobDetailModal");
+    if (existing) existing.remove();
+
+    let modal = document.createElement("div");
+    modal.id = "jobDetailModal";
+    modal.style.cssText = `
+        position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:9999;
+        overflow-y:auto; padding:20px; box-sizing:border-box;
+        display:flex; align-items:flex-start; justify-content:center;
+    `;
+
+    modal.innerHTML = `
+        <div style="max-width:560px; width:100%; margin:40px auto; background:#0f172a;
+                    border-radius:20px; padding:28px; border:1px solid rgba(255,255,255,0.1);
+                    position:relative;">
+
+            <!-- Close -->
+            <button onclick="document.getElementById('jobDetailModal').remove()"
+                    style="position:absolute; top:16px; right:16px; background:none; border:none;
+                           color:#94a3b8; font-size:22px; cursor:pointer; padding:0;">
+                <i class="ri-close-line"></i>
+            </button>
+
+            <!-- Status badge -->
+            <div style="margin-bottom:12px;">
+                ${isClosed
+                    ? `<span style="background:#ef444422; color:#ef4444; padding:3px 12px; border-radius:20px; font-size:12px;">Closed</span>`
+                    : `<span style="background:#22c55e22; color:#22c55e; padding:3px 12px; border-radius:20px; font-size:12px;">Open</span>`}
+            </div>
+
+            <!-- Title & Company -->
+            <h2 style="color:#e2e8f0; margin:0 0 6px; font-size:22px;">${escapeHtml(job.title || "Untitled")}</h2>
+            <p style="color:#94a3b8; margin:0 0 20px; font-size:14px;">
+                <i class="ri-building-line"></i> ${escapeHtml(job.companyName || "—")}
+            </p>
+
+            <!-- Details grid -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:20px;">
+                ${detailItem("ri-map-pin-line", "Location", job.location)}
+                ${detailItem("ri-briefcase-line", "Type", job.employmentType)}
+                ${detailItem("ri-money-dollar-circle-line", "Salary", job.salary)}
+                ${detailItem("ri-time-line", "Experience", job.experience ? job.experience + " yr(s)" : "Not specified")}
+                ${detailItem("ri-global-line", "Domain", job.domain)}
+            </div>
+
+            <!-- Skills -->
+            <div style="margin-bottom:20px;">
+                <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">Required Skills</div>
+                <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                    ${(Array.isArray(job.skills) ? job.skills : (job.skills||"").split(","))
+                        .filter(Boolean)
+                        .map(s => `<span style="background:#6366f122; color:#818cf8; padding:5px 12px; border-radius:20px; font-size:12px; border:1px solid #6366f133;">${escapeHtml(s.trim())}</span>`)
+                        .join("") || `<span style="color:#64748b; font-size:13px;">None specified</span>`}
+                </div>
+            </div>
+
+            <!-- Description -->
+            ${job.description ? `
+                <div style="margin-bottom:20px;">
+                    <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">Description</div>
+                    <p style="color:#cbd5e1; font-size:14px; line-height:1.7; margin:0;">${escapeHtml(job.description)}</p>
+                </div>
+            ` : ""}
+
+            <!-- Action buttons -->
+            <div style="display:flex; gap:10px; margin-top:4px; flex-wrap:wrap;">
+                <button onclick="handleSaveJobModal('${job._id}')"
+                        id="modal-save-btn-${job._id}"
+                        style="flex:1; padding:12px; border-radius:10px; font-size:14px; font-weight:600;
+                               cursor:pointer; border:1px solid #334155;
+                               background:${isSaved ? '#6366f122' : '#1e293b'};
+                               color:${isSaved ? '#818cf8' : '#94a3b8'};">
+                    <i class="${isSaved ? 'ri-bookmark-fill' : 'ri-bookmark-line'}"></i>
+                    ${isSaved ? 'Saved' : 'Save Job'}
+                </button>
+
+                ${!isClosed
+                    ? (alreadyApplied
+                        ? `<button style="flex:2; padding:12px; border-radius:10px; font-size:14px; font-weight:600;
+                                   background:linear-gradient(135deg,#22c55e,#16a34a); color:white; border:none; cursor:default;">
+                            ✅ Already Applied
+                           </button>`
+                        : `<button onclick="closeModalAndApply('${job._id}')"
+                                   style="flex:2; padding:12px; border-radius:10px; font-size:14px; font-weight:600;
+                                          background:linear-gradient(135deg,#6366f1,#8b5cf6); color:white; border:none; cursor:pointer;">
+                            Apply Now
+                           </button>`)
+                    : `<button disabled style="flex:2; padding:12px; border-radius:10px; font-size:14px; font-weight:600;
+                                              background:#1e293b; color:#64748b; border:1px solid #334155; cursor:not-allowed;">
+                        Job Closed
+                       </button>`
+                }
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Close on backdrop click
+    modal.addEventListener("click", (e) => {
+        if (e.target === modal) modal.remove();
+    });
+}
+
+function detailItem(icon, label, value) {
+    if (!value) return "";
+    return `
+        <div style="background:#1e293b; border-radius:10px; padding:12px;">
+            <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">
+                <i class="${icon}" style="color:#6366f1;"></i> ${label}
+            </div>
+            <div style="font-size:14px; color:#e2e8f0; font-weight:500;">${escapeHtml(String(value))}</div>
+        </div>`;
+}
+
+async function handleSaveJobModal(jobId) {
+    let btn = document.getElementById(`modal-save-btn-${jobId}`);
+    if (!btn) return;
+    await toggleSaveJob(jobId, {
+        // proxy object to update modal button UI
+        innerHTML: "",
+        title: "",
+        style: { color: "" },
+        set innerHTML(v) { btn.innerHTML = v.includes("fill") ? `<i class="ri-bookmark-fill"></i> Saved` : `<i class="ri-bookmark-line"></i> Save Job`; },
+        set title(v) {},
+        get style() { return { set color(c) { btn.style.color = c; btn.style.background = c === "#6366f1" ? "#6366f122" : "#1e293b"; } }; }
+    });
+    // Also update card button if visible
+    let cardBtn = document.getElementById(`save-btn-${jobId}`);
+    if (cardBtn) {
+        let saved = savedJobIds.has(jobId);
+        cardBtn.innerHTML = `<i class="${saved ? 'ri-bookmark-fill' : 'ri-bookmark-line'}"></i>`;
+        cardBtn.style.color = saved ? "#6366f1" : "#94a3b8";
+    }
+}
+
+function closeModalAndApply(jobId) {
+    let modal = document.getElementById("jobDetailModal");
+    if (modal) modal.remove();
+    goApply(jobId);
+}
+
+// =============================================
+// RENDER: MY APPLICATIONS (with status tabs)
+// =============================================
+function renderApplications(content, activeTab) {
+    activeTab = activeTab || "all";
+
+    let tabs = [
+        { key: "all",       label: "All",       count: allApplications.length },
+        { key: "Applied",   label: "Applied",   count: allApplications.filter(a => a.status === "Applied" || a.status === "Screening").length },
+        { key: "Interview", label: "Interview", count: allApplications.filter(a => a.status === "Interview").length },
+        { key: "Selected",  label: "Selected",  count: allApplications.filter(a => a.status === "Selected").length },
+        { key: "Rejected",  label: "Rejected",  count: allApplications.filter(a => a.status === "Rejected").length },
+    ];
+
+    let filtered = activeTab === "all" ? allApplications
+        : activeTab === "Applied"   ? allApplications.filter(a => a.status === "Applied" || a.status === "Screening")
+        : allApplications.filter(a => a.status === activeTab);
+
     content.innerHTML = `
         <div style="padding: 0 4px;">
             <h2 style="color:#e2e8f0; margin-bottom:16px;">My Applications</h2>
+
+            <!-- Tabs -->
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px;">
+                ${tabs.map(t => `
+                    <button onclick="renderApplications(document.getElementById('content'), '${t.key}')"
+                            style="padding:7px 14px; border-radius:20px; font-size:13px; font-weight:600;
+                                   cursor:pointer; border:1px solid ${activeTab === t.key ? '#6366f1' : '#334155'};
+                                   background:${activeTab === t.key ? '#6366f122' : 'transparent'};
+                                   color:${activeTab === t.key ? '#818cf8' : '#94a3b8'};">
+                        ${t.label} <span style="font-size:11px; opacity:0.7;">(${t.count})</span>
+                    </button>
+                `).join("")}
+            </div>
+
             <div id="applicationsContainer">
-                ${renderApplicationCards(allApplications)}
+                ${renderApplicationCards(filtered)}
             </div>
         </div>
     `;
 }
- 
+
 function renderApplicationCards(apps) {
     if (!apps || apps.length === 0) {
-        return `<p style="color:#94a3b8;">No applications yet. <a onclick="showSection('jobs')" style="color:#6366f1; cursor:pointer;">Browse jobs →</a></p>`;
+        return `<p style="color:#94a3b8;">No applications in this category. <a onclick="showSection('jobs')" style="color:#6366f1; cursor:pointer;">Browse jobs →</a></p>`;
     }
     return apps.map(app => {
-        // ✅ Server uses: Applied, Screening, Interview, Selected, Rejected
         let statusColor = app.status === "Selected"  ? "#22c55e"
                         : app.status === "Rejected"  ? "#ef4444"
                         : app.status === "Interview" ? "#f59e0b"
                         : app.status === "Screening" ? "#38bdf8"
                         : "#94a3b8";
- 
-        // find job title from loaded jobs list
-        let job = allJobs.find(j => j._id === (app.jobId?._id || app.jobId));
+
+        let job      = allJobs.find(j => j._id === (app.jobId?._id || app.jobId));
         let jobTitle = job?.title || app.jobTitle || "Job Application";
- 
+
+        let statusIcon = app.status === "Selected"  ? "🎉"
+                       : app.status === "Rejected"  ? "❌"
+                       : app.status === "Interview" ? "📅"
+                       : app.status === "Screening" ? "🔍"
+                       : "📋";
+
+        // Build the resume URL — server stores as "uploads/filename.pdf"
+        let resumeHref = app.resumeUrl
+            ? (app.resumeUrl.startsWith("http") ? app.resumeUrl : `${BASE_URL}/${app.resumeUrl}`)
+            : "";
+
         return `
             <div class="job-card-premium">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px;">
-                    <div>
+                    <div style="flex:1;">
                         <h3 style="margin:0 0 6px;">${escapeHtml(jobTitle)}</h3>
                         ${job ? `<p style="margin:2px 0; font-size:13px; color:#94a3b8;"><i class="ri-building-line"></i> ${escapeHtml(job.companyName || "")}</p>` : ""}
+                        ${job ? `<p style="margin:2px 0; font-size:13px; color:#94a3b8;"><i class="ri-map-pin-line"></i> ${escapeHtml(job.location || "")}</p>` : ""}
                         <p style="margin:4px 0; font-size:13px; color:#94a3b8;">
                             Applied: ${new Date(app.appliedAt || app.createdAt).toLocaleDateString()}
                         </p>
                         ${app.matchScore > 0
-                            ? `<p style="font-size:13px; color:#94a3b8;">
+                            ? `<p style="font-size:13px; color:#94a3b8; margin:2px 0;">
                                Match: <span style="color:${app.matchScore >= 70 ? '#22c55e' : app.matchScore >= 40 ? '#f59e0b' : '#ef4444'}; font-weight:600;">
                                ${parseFloat(app.matchScore).toFixed(1)}%</span></p>`
                             : ""}
                         ${app.status === "Interview"
-                            ? `<p style="font-size:13px; color:#f59e0b; margin-top:4px;">
-                                📅 Interview scheduled — check email for details</p>`
+                            ? `<p style="font-size:13px; color:#f59e0b; margin-top:6px;">
+                                📅 Interview scheduled — check your email for details</p>`
+                            : ""}
+                        ${app.status === "Selected"
+                            ? `<p style="font-size:13px; color:#22c55e; margin-top:6px;">
+                                🎉 Congratulations! You have been selected.</p>`
                             : ""}
                     </div>
-                    <span style="background:${statusColor}22; color:${statusColor}; padding:4px 12px;
-                                border-radius:20px; font-size:12px; font-weight:600;
-                                border:1px solid ${statusColor}44;">
-                        ${escapeHtml(app.status || "Applied")}
-                    </span>
+                    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+                        <span style="background:${statusColor}22; color:${statusColor}; padding:4px 12px;
+                                    border-radius:20px; font-size:12px; font-weight:600;
+                                    border:1px solid ${statusColor}44; white-space:nowrap;">
+                            ${statusIcon} ${escapeHtml(app.status || "Applied")}
+                        </span>
+                    </div>
                 </div>
+
+                <!-- Resume view button -->
+                ${resumeHref ? `
+                <div style="margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.06);">
+                    <a href="${resumeHref}" target="_blank"
+                       style="display:inline-flex; align-items:center; gap:7px; padding:8px 16px;
+                              border-radius:8px; background:#1e3a5f; color:#38bdf8;
+                              font-size:13px; font-weight:600; text-decoration:none;
+                              border:1px solid #38bdf844; transition:background 0.2s;">
+                        <i class="ri-file-pdf-line" style="font-size:15px;"></i>
+                        View Submitted Resume
+                    </a>
+                </div>` : `
+                <div style="margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.06);">
+                    <span style="font-size:12px; color:#475569;">
+                        <i class="ri-file-unknow-line"></i> No resume attached
+                    </span>
+                </div>`}
             </div>`;
     }).join("");
 }
- 
+
 // =============================================
-// RENDER: PROFILE
+// RENDER: PROFILE (styled like the screenshot)
 // =============================================
 async function renderProfile(content) {
     content.innerHTML = `<div style="padding:0 4px;"><p style="color:#94a3b8;">Loading profile...</p></div>`;
@@ -372,6 +644,7 @@ async function renderProfile(content) {
         let phone        = user.profile?.phone     || "";
         let location     = user.profile?.location  || "";
         let gender       = user.gender   || "";
+        let type         = user.type     || "";
         let role         = user.role     || "job_seeker";
         let joinDate     = user.createdAt ? new Date(user.createdAt).toLocaleDateString("en-IN", { year:"numeric", month:"long" }) : "";
         let resumeSkills = user.resume?.parsedData?.skills || [];
@@ -385,44 +658,60 @@ async function renderProfile(content) {
         let selected    = allApplications.filter(a => a.status === "Selected").length;
 
         let avatarHtml = profileImage
-            ? `<img src="${profileImage}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;">`
-            : `<div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);
-                           display:flex;align-items:center;justify-content:center;font-size:26px;color:white;font-weight:700;flex-shrink:0;">
+            ? `<img src="${profileImage}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid #6366f1;">`
+            : `<div style="width:80px;height:80px;border-radius:50%;
+                           background:linear-gradient(135deg,#6366f1,#8b5cf6);
+                           display:flex;align-items:center;justify-content:center;
+                           font-size:30px;color:white;font-weight:700;flex-shrink:0;
+                           border:3px solid #6366f144;">
                    ${escapeHtml((firstName.charAt(0) || "U").toUpperCase())}
                </div>`;
 
         content.innerHTML = `
-            <div style="padding:0 4px; max-width:600px;">
-                <h2 style="color:#e2e8f0; margin-bottom:20px;">My Profile</h2>
+            <div style="padding:0 4px; max-width:640px;">
 
-                <div class="job-card-premium" style="margin-bottom:16px;">
-                    <div style="display:flex; align-items:center; gap:16px; margin-bottom:20px; flex-wrap:wrap;">
+                <!-- ── Profile Card ── -->
+                <div class="job-card-premium" style="margin-bottom:16px; padding:24px;">
+
+                    <!-- Gradient accent bar -->
+                    <div style="height:3px; background:linear-gradient(90deg,#6366f1,#22c55e);
+                                border-radius:2px; margin-bottom:20px;"></div>
+
+                    <!-- Avatar + Email row -->
+                    <div style="display:flex; align-items:center; gap:16px; margin-bottom:24px;">
                         ${avatarHtml}
-                        <div style="flex:1; min-width:160px;">
-                            <div style="font-size:20px; font-weight:700; color:#e2e8f0;">${escapeHtml(firstName + " " + lastName)}</div>
-                            <div style="font-size:13px; color:#94a3b8; margin-top:2px;">${escapeHtml(user.email || currentUserEmail)}</div>
-                            <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
-                                <span style="background:#6366f122; color:#818cf8; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; text-transform:capitalize; border:1px solid #6366f144;">
-                                    ${role === "recruiter" ? "🏢 Recruiter" : "👤 Job Seeker"}
-                                </span>
-                                ${gender ? `<span style="background:#0ea5e922; color:#38bdf8; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; border:1px solid #0ea5e944;">${escapeHtml(gender)}</span>` : ""}
-                                ${joinDate ? `<span style="background:#10b98122; color:#34d399; padding:3px 10px; border-radius:20px; font-size:11px; border:1px solid #10b98144;">Joined ${joinDate}</span>` : ""}
+                        <div>
+                            <div style="font-size:18px; font-weight:700; color:#e2e8f0;">
+                                ${escapeHtml((firstName + " " + lastName).trim() || "No Name Set")}
+                            </div>
+                            <div style="font-size:13px; color:#94a3b8; margin-top:3px;">
+                                ${escapeHtml(user.email || currentUserEmail)}
                             </div>
                         </div>
+                        <button onclick="showEditProfile()"
+                                style="margin-left:auto; padding:8px 18px; border-radius:8px; font-size:13px;
+                                       font-weight:600; background:linear-gradient(135deg,#0ea5e9,#6366f1);
+                                       color:white; border:none; cursor:pointer;">
+                            Edit
+                        </button>
                     </div>
 
-                    <div style="display:grid; gap:0;">
-                        ${profileField("ri-phone-line", "Phone", phone)}
-                        ${profileField("ri-map-pin-line", "Location", location)}
-                        ${profileField("ri-mail-line", "Email", user.email || currentUserEmail)}
-                        ${profileField("ri-user-line", "Gender", gender)}
+                    <!-- Fields grid (like screenshot) -->
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+                        ${profileInputField("First Name", firstName)}
+                        ${profileInputField("Last Name", lastName)}
+                        ${profileInputField("Phone", phone)}
+                        ${profileInputField("City", location)}
+                        ${profileInputField("Gender", gender)}
+                        ${profileInputField("Type", type)}
                     </div>
 
-                    <button class="apply-btn" style="margin-top:18px; width:100%;" onclick="showEditProfile()">
-                        ✏️ Edit Profile
-                    </button>
+                    <div style="margin-top:14px;">
+                        ${profileInputField("Role", role)}
+                    </div>
                 </div>
 
+                <!-- ── Stats ── -->
                 <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px;">
                     <div style="background:#1e293b; border-radius:12px; padding:14px; text-align:center; border-top:3px solid #6366f1;">
                         <div style="font-size:24px; font-weight:700; color:#6366f1;">${myApps}</div>
@@ -438,14 +727,28 @@ async function renderProfile(content) {
                     </div>
                 </div>
 
+                <!-- ── Resume ── -->
                 <div class="job-card-premium" style="margin-bottom:16px;">
                     <h3 style="color:#e2e8f0; margin:0 0 14px; font-size:15px;">📄 Resume</h3>
-                    ${resumeFileUrl
-                        ? `<a href="${BASE_URL}/${resumeFileUrl}" target="_blank"
-                              style="display:inline-flex;align-items:center;gap:8px;color:#6366f1;font-size:13px;text-decoration:underline;margin-bottom:12px;">
-                               <i class="ri-file-pdf-line"></i> View Uploaded Resume
-                           </a><br>`
-                        : `<p style="color:#94a3b8; font-size:13px; margin:0 0 10px;">No resume on file. Upload one when you apply for a job.</p>`}
+                    ${(() => {
+                        let displayUrl = resumeFileUrl ? (resumeFileUrl.startsWith("http") ? resumeFileUrl : BASE_URL + "/" + resumeFileUrl) : "";
+                        if (!displayUrl && allApplications.length > 0) {
+                            let sorted = [...allApplications].sort((a, b) => new Date(b.appliedAt || b.createdAt) - new Date(a.appliedAt || a.createdAt));
+                            let latest = sorted.find(a => a.resumeUrl);
+                            if (latest && latest.resumeUrl) {
+                                displayUrl = latest.resumeUrl.startsWith("http") ? latest.resumeUrl : BASE_URL + "/" + latest.resumeUrl;
+                            }
+                        }
+                        return displayUrl
+                            ? '<a href="' + displayUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:9px;background:#1e3a5f;color:#38bdf8;font-size:13px;font-weight:600;text-decoration:none;border:1px solid #38bdf844;margin-bottom:14px;"><i class="ri-file-pdf-line" style="font-size:16px;"></i> View Resume PDF</a><br>'
+                            : '<p style="color:#94a3b8;font-size:13px;margin:0 0 10px;">No resume on file. Upload one when you apply for a job.</p>';
+                    })()}
+
+
+
+
+
+
                     ${resumeSkills.length > 0 ? `
                         <div style="margin-bottom:10px;">
                             <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">Skills from Resume</div>
@@ -465,24 +768,31 @@ async function renderProfile(content) {
                         </div>` : ""}
                 </div>
 
+                <!-- ── Recent Applications ── -->
                 ${allApplications.length > 0 ? `
                 <div class="job-card-premium">
                     <h3 style="color:#e2e8f0; margin:0 0 14px; font-size:15px;">📋 Recent Applications</h3>
                     ${allApplications.slice(0,3).map(app => {
-                        let job = allJobs.find(j => j._id === (app.jobId?._id || app.jobId));
+                        let j = allJobs.find(j2 => j2._id === (app.jobId?._id || app.jobId));
                         let sc = app.status==="Selected"?"#22c55e":app.status==="Rejected"?"#ef4444":app.status==="Interview"?"#f59e0b":app.status==="Screening"?"#38bdf8":"#94a3b8";
-                        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);flex-wrap:wrap;gap:6px;">
-                            <div>
-                                <div style="font-size:14px;color:#e2e8f0;font-weight:500;">${escapeHtml(job?.title||"Job Application")}</div>
-                                <div style="font-size:12px;color:#94a3b8;">${escapeHtml(job?.companyName||"")} · ${new Date(app.appliedAt||app.createdAt).toLocaleDateString()}</div>
+                        let rUrl = app.resumeUrl ? (app.resumeUrl.startsWith("http") ? app.resumeUrl : BASE_URL + "/" + app.resumeUrl) : "";
+                        return `<div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+                            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:6px;">
+                                <div>
+                                    <div style="font-size:14px;color:#e2e8f0;font-weight:500;">${escapeHtml(j?.title||"Job Application")}</div>
+                                    <div style="font-size:12px;color:#94a3b8;">${escapeHtml(j?.companyName||"")} · ${new Date(app.appliedAt||app.createdAt).toLocaleDateString()}</div>
+                                </div>
+                                <span style="background:${sc}22;color:${sc};padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid ${sc}44;">${escapeHtml(app.status||"Applied")}</span>
                             </div>
-                            <span style="background:${sc}22;color:${sc};padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid ${sc}44;">${escapeHtml(app.status||"Applied")}</span>
+                            ${rUrl ? `<a href="${rUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:7px;background:#1e3a5f;color:#38bdf8;font-size:12px;font-weight:600;text-decoration:none;border:1px solid #38bdf844;"><i class="ri-file-pdf-line"></i> View Resume</a>` : ""}
                         </div>`;
                     }).join("")}
                     ${allApplications.length > 3 ? `<p style="font-size:13px;color:#6366f1;cursor:pointer;margin-top:10px;margin-bottom:0;" onclick="showSection('applications')">View all ${allApplications.length} applications →</p>` : ""}
                 </div>` : ""}
+
             </div>
 
+            <!-- ── Edit Profile Modal ── -->
             <div id="editProfileModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7);
                  z-index:9999; overflow-y:auto; padding:20px; box-sizing:border-box;">
                 <div style="max-width:480px; margin:40px auto; background:#0f172a; border-radius:16px;
@@ -534,13 +844,15 @@ async function renderProfile(content) {
     }
 }
 
-function profileField(icon, label, value) {
+// Profile field styled like the screenshot (readonly input box)
+function profileInputField(label, value) {
     return `
-        <div style="display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
-            <i class="${icon}" style="color:#6366f1; font-size:16px; width:18px;"></i>
-            <div>
-                <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">${label}</div>
-                <div style="font-size:14px; color:#e2e8f0; margin-top:2px;">${escapeHtml(value || "Not set")}</div>
+        <div>
+            <div style="font-size:12px; color:#94a3b8; margin-bottom:6px;">${label}</div>
+            <div style="padding:10px 14px; border-radius:8px; border:1px solid #1e293b;
+                        background:#1e293b; color:${value ? '#e2e8f0' : '#334155'};
+                        font-size:14px; min-height:40px;">
+                ${escapeHtml(value || "")}
             </div>
         </div>`;
 }
@@ -592,7 +904,7 @@ async function saveProfile() {
         msg.style.color = "#ef4444"; msg.textContent = "Save failed. Please try again.";
     }
 }
- 
+
 // =============================================
 // NAVIGATE TO APPLY
 // =============================================
@@ -600,7 +912,7 @@ function goApply(jobId) {
     localStorage.setItem("selectedJobId", jobId);
     window.location.href = "apply.html";
 }
- 
+
 // =============================================
 // LOGOUT
 // =============================================
@@ -608,7 +920,7 @@ function logout() {
     localStorage.clear();
     window.location.href = "index.html";
 }
- 
+
 // =============================================
 // TOAST
 // =============================================
@@ -620,7 +932,7 @@ function showToast(message, type = "success") {
     if (type === "error") toast.classList.add("error");
     setTimeout(() => { toast.className = ""; }, 3000);
 }
- 
+
 // =============================================
 // HELPER
 // =============================================
