@@ -183,7 +183,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             document.getElementById("email").value = user.email || userEmail;
 
             // ✅ Pre-fill name
-            let fullName = ((user.firstName || "") + " " + (user.lastName || "")).trim();
+            let fullName = ((user.profile?.firstName || user.firstName || "") + " " + (user.profile?.lastName || user.lastName || "")).trim();
             if (fullName) {
                 document.getElementById("name").value = fullName;
                 // ✅ Update topbar name
@@ -191,10 +191,10 @@ window.addEventListener("DOMContentLoaded", async () => {
             }
 
             // ✅ Pre-fill city
-            if (user.city) document.getElementById("city").value = user.city;
+            if (user.profile?.location) document.getElementById("city").value = user.profile.location;
 
             // ✅ Pre-fill phone
-            if (user.phone) document.getElementById("phone").value = user.phone;
+            if (user.profile?.phone) document.getElementById("phone").value = user.profile.phone;
 
         } else {
             // Fallback to localStorage
@@ -215,6 +215,20 @@ window.addEventListener("DOMContentLoaded", async () => {
 // =============================================
 document.getElementById("resumeInput").addEventListener("change", function() {
     if (this.files && this.files[0]) {
+        let file = this.files[0];
+
+        // ✅ Client-side validation before PDF.js
+        if (file.type !== "application/pdf") {
+            showAnalysisError("Only PDF files are allowed. Please upload a .pdf resume.");
+            this.value = "";
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            showAnalysisError("File is too large (max 5MB). Please compress your PDF.");
+            this.value = "";
+            return;
+        }
+
         analyzeResume();
     }
 });
@@ -279,7 +293,9 @@ async function analyzeResume() {
             return;
         }
 
-        let jobSkills = job.skills.toLowerCase().split(",").map(s => s.trim());
+        let jobSkills = Array.isArray(job.skills)
+            ? job.skills.map(s => s.trim().toLowerCase())
+            : (job.skills || "").toLowerCase().split(",").map(s => s.trim()).filter(Boolean);
         let jobExp = parseInt(job.experience) || 0;
 
         let matched = jobSkills.filter(skill => userSkills.map(s => s.toLowerCase()).includes(skill));
@@ -298,7 +314,9 @@ async function analyzeResume() {
         analyzedData = {
             skills: userSkills,
             experience: userExp,
-            match: parseFloat(finalScore.toFixed(1))
+            match: parseFloat(finalScore.toFixed(1)),
+            matchedSkills: matched,
+            missingSkills: missing
         };
 
         // ✅ Show result
@@ -395,6 +413,8 @@ function submitApplication() {
     formData.append("skills", analyzedData.skills.join(", "));
     formData.append("experience", analyzedData.experience);
     formData.append("match", analyzedData.match);
+    formData.append("matchedSkills", analyzedData.matchedSkills.join(", "));
+    formData.append("missingSkills", analyzedData.missingSkills.join(", "));
     formData.append("jobId", jobId);
     formData.append("resume", resumeFile);
 

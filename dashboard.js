@@ -360,45 +360,172 @@ function renderApplicationCards(apps) {
 // =============================================
 async function renderProfile(content) {
     content.innerHTML = `<div style="padding:0 4px;"><p style="color:#94a3b8;">Loading profile...</p></div>`;
- 
+
     try {
         let res  = await fetch(`${BASE_URL}/profile/${currentUserEmail}`);
         let user = await res.json();
- 
+
         if (!user || user.error) throw new Error("Profile not found");
- 
-        let firstName = user.profile?.firstName || "";
-        let lastName  = user.profile?.lastName  || "";
-        let phone     = user.profile?.phone     || "";
-        let location  = user.profile?.location  || "";
- 
+
+        let firstName    = user.profile?.firstName || "";
+        let lastName     = user.profile?.lastName  || "";
+        let phone        = user.profile?.phone     || "";
+        let location     = user.profile?.location  || "";
+        let gender       = user.gender   || "";
+        let role         = user.role     || "job_seeker";
+        let joinDate     = user.createdAt ? new Date(user.createdAt).toLocaleDateString("en-IN", { year:"numeric", month:"long" }) : "";
+        let resumeSkills = user.resume?.parsedData?.skills || [];
+        let resumeFileUrl= user.resume?.fileUrl || "";
+        let resumeExp    = user.resume?.parsedData?.experience || [];
+        let resumeEdu    = user.resume?.parsedData?.education  || [];
+        let profileImage = user.profileImage || "";
+
+        let myApps      = allApplications.length;
+        let interviews  = allApplications.filter(a => a.status === "Interview").length;
+        let selected    = allApplications.filter(a => a.status === "Selected").length;
+
+        let avatarHtml = profileImage
+            ? `<img src="${profileImage}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;">`
+            : `<div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);
+                           display:flex;align-items:center;justify-content:center;font-size:26px;color:white;font-weight:700;flex-shrink:0;">
+                   ${escapeHtml((firstName.charAt(0) || "U").toUpperCase())}
+               </div>`;
+
         content.innerHTML = `
-            <div style="padding: 0 4px;">
+            <div style="padding:0 4px; max-width:600px;">
                 <h2 style="color:#e2e8f0; margin-bottom:20px;">My Profile</h2>
-                <div class="job-card-premium" style="max-width:520px;">
-                    <div style="display:flex; align-items:center; gap:14px; margin-bottom:20px;">
-                        <div style="width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,#6366f1,#8b5cf6);
-                                    display:flex; align-items:center; justify-content:center; font-size:22px; color:white; font-weight:700; flex-shrink:0;">
-                            ${escapeHtml(firstName.charAt(0).toUpperCase() || "U")}
-                        </div>
-                        <div>
-                            <div style="font-size:18px; font-weight:600; color:#e2e8f0;">${escapeHtml(firstName + " " + lastName)}</div>
-                            <div style="font-size:13px; color:#94a3b8;">${escapeHtml(user.email || currentUserEmail)}</div>
-                            <div style="font-size:12px; color:#6366f1; margin-top:2px; text-transform:capitalize;">${escapeHtml(user.role || "Job Seeker")}</div>
+
+                <div class="job-card-premium" style="margin-bottom:16px;">
+                    <div style="display:flex; align-items:center; gap:16px; margin-bottom:20px; flex-wrap:wrap;">
+                        ${avatarHtml}
+                        <div style="flex:1; min-width:160px;">
+                            <div style="font-size:20px; font-weight:700; color:#e2e8f0;">${escapeHtml(firstName + " " + lastName)}</div>
+                            <div style="font-size:13px; color:#94a3b8; margin-top:2px;">${escapeHtml(user.email || currentUserEmail)}</div>
+                            <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
+                                <span style="background:#6366f122; color:#818cf8; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; text-transform:capitalize; border:1px solid #6366f144;">
+                                    ${role === "recruiter" ? "🏢 Recruiter" : "👤 Job Seeker"}
+                                </span>
+                                ${gender ? `<span style="background:#0ea5e922; color:#38bdf8; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; border:1px solid #0ea5e944;">${escapeHtml(gender)}</span>` : ""}
+                                ${joinDate ? `<span style="background:#10b98122; color:#34d399; padding:3px 10px; border-radius:20px; font-size:11px; border:1px solid #10b98144;">Joined ${joinDate}</span>` : ""}
+                            </div>
                         </div>
                     </div>
- 
-                    <div style="display:grid; gap:12px;">
+
+                    <div style="display:grid; gap:0;">
                         ${profileField("ri-phone-line", "Phone", phone)}
                         ${profileField("ri-map-pin-line", "Location", location)}
-                        ${profileField("ri-user-line", "Gender", user.gender || "")}
+                        ${profileField("ri-mail-line", "Email", user.email || currentUserEmail)}
+                        ${profileField("ri-user-line", "Gender", gender)}
                     </div>
- 
+
                     <button class="apply-btn" style="margin-top:18px; width:100%;" onclick="showEditProfile()">
                         ✏️ Edit Profile
                     </button>
                 </div>
+
+                <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px;">
+                    <div style="background:#1e293b; border-radius:12px; padding:14px; text-align:center; border-top:3px solid #6366f1;">
+                        <div style="font-size:24px; font-weight:700; color:#6366f1;">${myApps}</div>
+                        <div style="font-size:12px; color:#94a3b8; margin-top:4px;">Applied</div>
+                    </div>
+                    <div style="background:#1e293b; border-radius:12px; padding:14px; text-align:center; border-top:3px solid #f59e0b;">
+                        <div style="font-size:24px; font-weight:700; color:#f59e0b;">${interviews}</div>
+                        <div style="font-size:12px; color:#94a3b8; margin-top:4px;">Interviews</div>
+                    </div>
+                    <div style="background:#1e293b; border-radius:12px; padding:14px; text-align:center; border-top:3px solid #22c55e;">
+                        <div style="font-size:24px; font-weight:700; color:#22c55e;">${selected}</div>
+                        <div style="font-size:12px; color:#94a3b8; margin-top:4px;">Selected</div>
+                    </div>
+                </div>
+
+                <div class="job-card-premium" style="margin-bottom:16px;">
+                    <h3 style="color:#e2e8f0; margin:0 0 14px; font-size:15px;">📄 Resume</h3>
+                    ${resumeFileUrl
+                        ? `<a href="${BASE_URL}/${resumeFileUrl}" target="_blank"
+                              style="display:inline-flex;align-items:center;gap:8px;color:#6366f1;font-size:13px;text-decoration:underline;margin-bottom:12px;">
+                               <i class="ri-file-pdf-line"></i> View Uploaded Resume
+                           </a><br>`
+                        : `<p style="color:#94a3b8; font-size:13px; margin:0 0 10px;">No resume on file. Upload one when you apply for a job.</p>`}
+                    ${resumeSkills.length > 0 ? `
+                        <div style="margin-bottom:10px;">
+                            <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">Skills from Resume</div>
+                            <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                                ${resumeSkills.map(s => `<span style="background:#6366f122;color:#818cf8;padding:4px 10px;border-radius:20px;font-size:12px;border:1px solid #6366f133;">${escapeHtml(s)}</span>`).join("")}
+                            </div>
+                        </div>` : ""}
+                    ${resumeExp.length > 0 ? `
+                        <div style="margin-bottom:10px;">
+                            <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Experience</div>
+                            ${resumeExp.map(e => `<div style="font-size:13px;color:#cbd5e1;padding:4px 0;">${escapeHtml(typeof e==="object"?(e.title||e.company||JSON.stringify(e)):String(e))}</div>`).join("")}
+                        </div>` : ""}
+                    ${resumeEdu.length > 0 ? `
+                        <div>
+                            <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Education</div>
+                            ${resumeEdu.map(e => `<div style="font-size:13px;color:#cbd5e1;padding:4px 0;">${escapeHtml(typeof e==="object"?(e.degree||e.institution||JSON.stringify(e)):String(e))}</div>`).join("")}
+                        </div>` : ""}
+                </div>
+
+                ${allApplications.length > 0 ? `
+                <div class="job-card-premium">
+                    <h3 style="color:#e2e8f0; margin:0 0 14px; font-size:15px;">📋 Recent Applications</h3>
+                    ${allApplications.slice(0,3).map(app => {
+                        let job = allJobs.find(j => j._id === (app.jobId?._id || app.jobId));
+                        let sc = app.status==="Selected"?"#22c55e":app.status==="Rejected"?"#ef4444":app.status==="Interview"?"#f59e0b":app.status==="Screening"?"#38bdf8":"#94a3b8";
+                        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);flex-wrap:wrap;gap:6px;">
+                            <div>
+                                <div style="font-size:14px;color:#e2e8f0;font-weight:500;">${escapeHtml(job?.title||"Job Application")}</div>
+                                <div style="font-size:12px;color:#94a3b8;">${escapeHtml(job?.companyName||"")} · ${new Date(app.appliedAt||app.createdAt).toLocaleDateString()}</div>
+                            </div>
+                            <span style="background:${sc}22;color:${sc};padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid ${sc}44;">${escapeHtml(app.status||"Applied")}</span>
+                        </div>`;
+                    }).join("")}
+                    ${allApplications.length > 3 ? `<p style="font-size:13px;color:#6366f1;cursor:pointer;margin-top:10px;margin-bottom:0;" onclick="showSection('applications')">View all ${allApplications.length} applications →</p>` : ""}
+                </div>` : ""}
+            </div>
+
+            <div id="editProfileModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7);
+                 z-index:9999; overflow-y:auto; padding:20px; box-sizing:border-box;">
+                <div style="max-width:480px; margin:40px auto; background:#0f172a; border-radius:16px;
+                            padding:28px; border:1px solid rgba(255,255,255,0.1);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                        <h3 style="color:#e2e8f0; margin:0;">✏️ Edit Profile</h3>
+                        <i class="ri-close-line" onclick="closeEditProfile()"
+                           style="color:#94a3b8; font-size:22px; cursor:pointer;"></i>
+                    </div>
+                    <div style="display:grid; gap:12px;">
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                            <input id="ep_firstName" type="text" placeholder="First Name" value="${escapeHtml(firstName)}"
+                                   style="padding:10px 14px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#e2e8f0;font-size:14px;">
+                            <input id="ep_lastName" type="text" placeholder="Last Name" value="${escapeHtml(lastName)}"
+                                   style="padding:10px 14px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#e2e8f0;font-size:14px;">
+                        </div>
+                        <input id="ep_phone" type="tel" placeholder="Phone Number" value="${escapeHtml(phone)}"
+                               style="padding:10px 14px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#e2e8f0;font-size:14px;">
+                        <input id="ep_location" type="text" placeholder="City / Location" value="${escapeHtml(location)}"
+                               style="padding:10px 14px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#e2e8f0;font-size:14px;">
+                        <select id="ep_gender" style="padding:10px 14px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#e2e8f0;font-size:14px;">
+                            <option value="">Select Gender</option>
+                            <option value="Male" ${gender==="Male"?"selected":""}>Male</option>
+                            <option value="Female" ${gender==="Female"?"selected":""}>Female</option>
+                            <option value="Other" ${gender==="Other"?"selected":""}>Other</option>
+                        </select>
+                        <input type="text" placeholder="Email (cannot be changed)" value="${escapeHtml(user.email||currentUserEmail)}" readonly
+                               style="padding:10px 14px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#64748b;font-size:14px;cursor:not-allowed;">
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:16px;">
+                        <button onclick="closeEditProfile()"
+                                style="padding:10px;border-radius:8px;background:#1e293b;color:#94a3b8;border:1px solid #334155;cursor:pointer;font-size:14px;">
+                            Cancel
+                        </button>
+                        <button onclick="saveProfile()"
+                                style="padding:10px;border-radius:8px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border:none;cursor:pointer;font-size:14px;font-weight:600;">
+                            Save Changes
+                        </button>
+                    </div>
+                    <p id="editProfileMsg" style="margin-top:10px; font-size:13px; text-align:center;"></p>
+                </div>
             </div>`;
+
     } catch (err) {
         content.innerHTML = `<div style="padding:0 4px;">
             <h2 style="color:#e2e8f0;">My Profile</h2>
@@ -406,7 +533,7 @@ async function renderProfile(content) {
         </div>`;
     }
 }
- 
+
 function profileField(icon, label, value) {
     return `
         <div style="display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
@@ -417,9 +544,53 @@ function profileField(icon, label, value) {
             </div>
         </div>`;
 }
- 
+
 function showEditProfile() {
-    showToast("Profile editing coming soon!", "success");
+    let modal = document.getElementById("editProfileModal");
+    if (modal) modal.style.display = "block";
+}
+
+function closeEditProfile() {
+    let modal = document.getElementById("editProfileModal");
+    if (modal) modal.style.display = "none";
+}
+
+async function saveProfile() {
+    let firstName = document.getElementById("ep_firstName").value.trim();
+    let lastName  = document.getElementById("ep_lastName").value.trim();
+    let contact   = document.getElementById("ep_phone").value.trim();
+    let city      = document.getElementById("ep_location").value.trim();
+    let gender    = document.getElementById("ep_gender").value;
+    let msg       = document.getElementById("editProfileMsg");
+
+    if (!firstName) { msg.style.color = "#ef4444"; msg.textContent = "First name is required."; return; }
+
+    msg.style.color = "#94a3b8"; msg.textContent = "Saving...";
+
+    try {
+        let res = await fetch(`${BASE_URL}/update-profile`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: currentUserEmail, firstName, lastName, contact, city, gender })
+        });
+        let data = await res.json();
+
+        if (data.error) { msg.style.color = "#ef4444"; msg.textContent = data.error; return; }
+
+        msg.style.color = "#22c55e"; msg.textContent = "Profile updated ✅";
+
+        let sessionUser = JSON.parse(localStorage.getItem("loggedInUser") || "{}");
+        sessionUser.firstName = firstName; sessionUser.lastName = lastName;
+        localStorage.setItem("loggedInUser", JSON.stringify(sessionUser));
+        window._welcomeName = firstName;
+
+        setTimeout(() => {
+            closeEditProfile();
+            renderProfile(document.getElementById("content"));
+        }, 900);
+    } catch (err) {
+        msg.style.color = "#ef4444"; msg.textContent = "Save failed. Please try again.";
+    }
 }
  
 // =============================================
