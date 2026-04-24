@@ -9,6 +9,7 @@
 const BASE_URL = "https://hirex-backend-sio8.onrender.com";
 
 let employerEmail   = "";
+let employerName    = "Employer";
 let employerJobs    = [];
 let allEmployerApps = [];
 let activeSection    = "dashboard";
@@ -33,17 +34,23 @@ window.addEventListener("DOMContentLoaded", async () => {
 // LOAD EMPLOYER PROFILE
 // =============================================
 async function loadEmployerProfile(userEmail, sessionUser) {
-    let firstName = sessionUser.firstName || "";
+    let firstName = sessionUser.firstName || sessionUser.profile?.firstName || "";
+    let lastName  = sessionUser.lastName  || sessionUser.profile?.lastName  || "";
     try {
         let res  = await fetch(`${BASE_URL}/profile/${userEmail}`);
         let user = await res.json();
-        if (user && !user.error) firstName = user.profile?.firstName || user.firstName || firstName;
+        if (user && !user.error) {
+            firstName = user.profile?.firstName || user.firstName || firstName;
+            lastName  = user.profile?.lastName  || user.lastName  || lastName;
+        }
     } catch (err) { console.error("Employer profile fetch failed:", err); }
 
+    employerName = `${firstName} ${lastName}`.trim() || "Employer";
+
     let welcomeEl    = document.getElementById("welcomeUser");
-    if (welcomeEl)   welcomeEl.textContent = `Welcome ${firstName || "Employer"} 👋`;
+    if (welcomeEl)   welcomeEl.textContent = `Welcome ${employerName} 👋`;
     let topbarNameEl = document.getElementById("topbarName");
-    if (topbarNameEl) topbarNameEl.textContent = firstName || "Employer";
+    if (topbarNameEl) topbarNameEl.textContent = employerName;
 }
 
 // =============================================
@@ -151,7 +158,7 @@ async function loadEmployerApplications() {
 function renderDashboard(content) {
     content.innerHTML = `
         <div style="padding:0 4px; max-width:980px;">
-            <h2 id="welcomeUser" style="margin-bottom:20px; color:#e2e8f0;">Welcome Employer 👋</h2>
+            <h2 id="welcomeUser" style="margin-bottom:20px; color:#e2e8f0;">Welcome ${escapeHtml(employerName)} 👋</h2>
             <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; margin-bottom:16px;">
                 <div style="background:#1e293b; border-radius:10px; padding:18px; text-align:center; border-top:3px solid #6366f1;">
                     <div style="font-size:26px; font-weight:700; color:#6366f1;" id="jobCount">0</div>
@@ -231,7 +238,15 @@ async function renderLatestApplicantsPanel() {
         `;
     } catch (err) {
         console.error("Latest applicants fetch failed:", err);
-        panel.innerHTML = `<p style="color:#ef4444; margin:0; font-size:14px;">Failed to load latest applicants.</p>`;
+        panel.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:14px;">
+                <h3 style="margin:0; color:#e2e8f0; font-size:16px;">Latest Applicants</h3>
+                <button type="button" onclick="showSection('applicants')"
+                        style="background:transparent; border:1px solid #334155; color:#94a3b8; border-radius:8px; padding:7px 12px; cursor:pointer; font-size:13px;">
+                    View All
+                </button>
+            </div>
+            <p style="color:#ef4444; margin:0; font-size:14px;">Failed to load latest applicants.</p>`;
     }
 }
 

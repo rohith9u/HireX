@@ -265,15 +265,48 @@ function statCard(label, value, color) {
 // RENDER: JOBS LIST
 // =============================================
 function renderJobs(content) {
+    const domains = getUniqueJobValues("domain");
+    const jobTypes = getUniqueJobValues("employmentType");
+
     content.innerHTML = `
-        <div style="padding: 0 4px;">
-            <h2 style="color:#e2e8f0; margin-bottom:16px;">Available Jobs</h2>
-            <input id="jobSearch" type="text" placeholder="Search by title, company, skills..."
-                   oninput="filterJobs(this.value)"
-                   style="width:100%; padding:10px 14px; border-radius:8px; border:1px solid #334155;
-                          background:#1e293b; color:#e2e8f0; font-size:14px; margin-bottom:16px; box-sizing:border-box;">
-            <div id="jobsContainer">
-                ${renderJobCards(allJobs)}
+        <div class="jobs-page" style="padding:0 4px;">
+            <aside class="filters">
+                <h3>Filters</h3>
+
+                <label for="jobDomainFilter" style="display:block;color:#94a3b8;font-size:13px;font-weight:600;">Domain</label>
+                <select id="jobDomainFilter" style="${filterControlStyle}">
+                    <option value="">All</option>
+                    ${domains.map(domain => `<option value="${escapeHtml(domain)}">${escapeHtml(domain)}</option>`).join("")}
+                </select>
+
+                <label for="jobTypeFilter" style="display:block;color:#94a3b8;font-size:13px;font-weight:600;">Job Type</label>
+                <select id="jobTypeFilter" style="${filterControlStyle}">
+                    <option value="">All</option>
+                    ${jobTypes.map(type => `<option value="${escapeHtml(type)}">${escapeHtml(type)}</option>`).join("")}
+                </select>
+
+                <label for="minSalaryFilter" style="display:block;color:#94a3b8;font-size:13px;font-weight:600;">Min Salary</label>
+                <input id="minSalaryFilter" type="number" min="0" placeholder="e.g. 20000" style="${filterControlStyle}">
+
+                <label for="companyFilter" style="display:block;color:#94a3b8;font-size:13px;font-weight:600;">Company</label>
+                <input id="companyFilter" type="text" placeholder="Search company" style="${filterControlStyle}">
+
+                <label for="jobSortFilter" style="display:block;color:#94a3b8;font-size:13px;font-weight:600;">Sort By</label>
+                <select id="jobSortFilter" style="${filterControlStyle}">
+                    <option value="latest">Latest</option>
+                    <option value="oldest">Oldest</option>
+                    <option value="salary-high">Salary: High to Low</option>
+                    <option value="salary-low">Salary: Low to High</option>
+                </select>
+
+                <button type="button" class="filter-btn" onclick="applyJobFilters()">Apply</button>
+            </aside>
+
+            <div class="jobs-content">
+                <h2 style="color:#e2e8f0;">Available Jobs</h2>
+                <div id="jobsContainer">
+                    ${renderJobCards(sortJobs([...allJobs], "latest"))}
+                </div>
             </div>
         </div>
     `;
@@ -291,6 +324,54 @@ function filterJobs(query) {
     if (container) container.innerHTML = renderJobCards(filtered);
 }
 
+const filterControlStyle = "width:100%;padding:12px 14px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;font-size:14px;margin:7px 0 14px;box-sizing:border-box;";
+
+function getUniqueJobValues(field) {
+    return [...new Set(allJobs.map(job => (job[field] || "").trim()).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b));
+}
+
+function parseSalaryValue(salary) {
+    if (!salary) return 0;
+    const text = String(salary).toLowerCase().replace(/,/g, "");
+    const numbers = text.match(/\d+(\.\d+)?/g);
+    if (!numbers) return 0;
+    let value = Math.max(...numbers.map(Number));
+
+    if (text.includes("lpa") || text.includes("lakh") || text.includes("lac")) value *= 100000;
+    if (text.includes("k") && value < 10000) value *= 1000;
+
+    return value;
+}
+
+function sortJobs(jobs, sortBy) {
+    return jobs.sort((a, b) => {
+        if (sortBy === "oldest") return new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
+        if (sortBy === "salary-high") return parseSalaryValue(b.salary) - parseSalaryValue(a.salary);
+        if (sortBy === "salary-low") return parseSalaryValue(a.salary) - parseSalaryValue(b.salary);
+        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+    });
+}
+
+function applyJobFilters() {
+    const domain = document.getElementById("jobDomainFilter")?.value || "";
+    const jobType = document.getElementById("jobTypeFilter")?.value || "";
+    const minSalary = Number(document.getElementById("minSalaryFilter")?.value || 0);
+    const company = (document.getElementById("companyFilter")?.value || "").trim().toLowerCase();
+    const sortBy = document.getElementById("jobSortFilter")?.value || "latest";
+
+    let filtered = allJobs.filter(job => {
+        let matchesDomain = !domain || (job.domain || "") === domain;
+        let matchesType = !jobType || (job.employmentType || "") === jobType;
+        let matchesSalary = !minSalary || parseSalaryValue(job.salary) >= minSalary;
+        let matchesCompany = !company || (job.companyName || "").toLowerCase().includes(company);
+        return matchesDomain && matchesType && matchesSalary && matchesCompany;
+    });
+
+    let container = document.getElementById("jobsContainer");
+    if (container) container.innerHTML = renderJobCards(sortJobs(filtered, sortBy));
+}
+
 // =============================================
 // RENDER JOB CARDS (with View + Save buttons)
 // =============================================
@@ -301,7 +382,7 @@ function renderJobCards(jobs) {
     return jobs.map(job => {
         let skillsDisplay = Array.isArray(job.skills) ? job.skills.join(", ") : (job.skills || "");
         let isClosed = job.status === "closed";
-        let isSaved  = savedJobIds.has(job._id);
+        let isSaved  = savedJobIds.has(String(job._id));
         let alreadyApplied = allApplications.some(a => (a.jobId?._id || a.jobId) === job._id);
 
         let statusBadge = isClosed
