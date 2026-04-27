@@ -830,11 +830,18 @@ async function renderProfile(content) {
                     </div>
                 </div>
 
-                <!-- ── Resume ── -->
+                <!-- ── Saved Jobs (collapsible) ── -->
                 ${renderSavedJobsProfile()}
 
+                <!-- ── Resume (collapsible) ── -->
                 <div class="job-card-premium" style="margin-bottom:16px;">
-                    <h3 style="color:#e2e8f0; margin:0 0 14px; font-size:15px;">📄 Resume</h3>
+                    <button onclick="toggleSection('resumeBody', 'resumeChevron')"
+                            style="width:100%;background:none;border:none;cursor:pointer;padding:0;
+                                   display:flex;justify-content:space-between;align-items:center;">
+                        <h3 style="color:#e2e8f0; margin:0; font-size:15px;">📄 Resume</h3>
+                        <i id="resumeChevron" class="ri-arrow-down-s-line" style="color:#94a3b8;font-size:18px;transition:transform 0.25s;"></i>
+                    </button>
+                    <div id="resumeBody" style="display:none; margin-top:14px;">
                     ${(() => {
                         let displayUrl = resumeFileUrl ? (resumeFileUrl.startsWith("http") ? resumeFileUrl : BASE_URL + "/" + resumeFileUrl) : "";
                         if (!displayUrl && allApplications.length > 0) {
@@ -871,12 +878,24 @@ async function renderProfile(content) {
                             <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Education</div>
                             ${resumeEdu.map(e => `<div style="font-size:13px;color:#cbd5e1;padding:4px 0;">${escapeHtml(typeof e==="object"?(e.degree||e.institution||JSON.stringify(e)):String(e))}</div>`).join("")}
                         </div>` : ""}
+                    </div>
                 </div>
 
-                <!-- ── Recent Applications ── -->
+                <!-- ── Recent Applications (collapsible) ── -->
                 ${allApplications.length > 0 ? `
                 <div class="job-card-premium">
-                    <h3 style="color:#e2e8f0; margin:0 0 14px; font-size:15px;">📋 Recent Applications</h3>
+                    <button onclick="toggleSection('recentAppsBody', 'recentAppsChevron')"
+                            style="width:100%;background:none;border:none;cursor:pointer;padding:0;
+                                   display:flex;justify-content:space-between;align-items:center;">
+                        <h3 style="color:#e2e8f0; margin:0; font-size:15px;">📋 Recent Applications</h3>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="background:#6366f122;color:#818cf8;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid #6366f144;">
+                                ${allApplications.length}
+                            </span>
+                            <i id="recentAppsChevron" class="ri-arrow-down-s-line" style="color:#94a3b8;font-size:18px;transition:transform 0.25s;"></i>
+                        </div>
+                    </button>
+                    <div id="recentAppsBody" style="display:none; margin-top:14px;">
                     ${allApplications.slice(0,3).map(app => {
                         let j = allJobs.find(j2 => j2._id === (app.jobId?._id || app.jobId));
                         let sc = app.status==="Selected"?"#22c55e":app.status==="Rejected"?"#ef4444":app.status==="Interview"?"#f59e0b":app.status==="Screening"?"#38bdf8":"#94a3b8";
@@ -893,6 +912,7 @@ async function renderProfile(content) {
                         </div>`;
                     }).join("")}
                     ${allApplications.length > 3 ? `<p style="font-size:13px;color:#6366f1;cursor:pointer;margin-top:10px;margin-bottom:0;" onclick="showSection('applications')">View all ${allApplications.length} applications →</p>` : ""}
+                    </div>
                 </div>` : ""}
 
             </div>
@@ -956,12 +976,18 @@ function renderSavedJobsProfile() {
 
     return `
         <div class="job-card-premium" style="margin-bottom:16px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px;">
+            <button onclick="toggleSection('savedJobsBody', 'savedJobsChevron')"
+                    style="width:100%;background:none;border:none;cursor:pointer;padding:0;
+                           display:flex;justify-content:space-between;align-items:center;gap:10px;">
                 <h3 style="color:#e2e8f0; margin:0; font-size:15px;">Saved Jobs</h3>
-                <span style="background:#6366f122;color:#818cf8;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid #6366f144;">
-                    ${jobs.length}
-                </span>
-            </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="background:#6366f122;color:#818cf8;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid #6366f144;">
+                        ${jobs.length}
+                    </span>
+                    <i id="savedJobsChevron" class="ri-arrow-down-s-line" style="color:#94a3b8;font-size:18px;transition:transform 0.25s;"></i>
+                </div>
+            </button>
+            <div id="savedJobsBody" style="display:none; margin-top:14px;">
             ${jobs.length === 0 ? `
                 <p style="color:#94a3b8;font-size:13px;margin:0;">No saved jobs yet.</p>
             ` : `
@@ -1003,6 +1029,7 @@ function renderSavedJobsProfile() {
                     }).join("")}
                 </div>
             `}
+            </div>
         </div>`;
 }
 
@@ -1093,6 +1120,18 @@ function showToast(message, type = "success") {
     toast.className = "show";
     if (type === "error") toast.classList.add("error");
     setTimeout(() => { toast.className = ""; }, 3000);
+}
+
+// =============================================
+// COLLAPSIBLE SECTION TOGGLE
+// =============================================
+function toggleSection(bodyId, chevronId) {
+    let body    = document.getElementById(bodyId);
+    let chevron = document.getElementById(chevronId);
+    if (!body) return;
+    let isOpen = body.style.display !== "none";
+    body.style.display = isOpen ? "none" : "block";
+    if (chevron) chevron.style.transform = isOpen ? "rotate(0deg)" : "rotate(180deg)";
 }
 
 // =============================================

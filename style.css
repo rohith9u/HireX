@@ -263,7 +263,7 @@ a:hover { color: var(--text); }
   font-family: 'Syne', sans-serif;
   font-size: 28px;
   font-weight: 700;
-  color: var(--accent2);
+  color: var(--text);
   margin-top: 6px;
 }
 .interview-card {
@@ -273,7 +273,7 @@ a:hover { color: var(--text); }
   border-color: rgba(56,189,248,0.6);
   box-shadow: 0 8px 24px rgba(56,189,248,0.12);
 }
-.interview-card span { color: var(--blue); }
+.interview-card span { color: var(--text); }
 
 @media (max-width: 768px) {
   .stats { display: grid; grid-template-columns: 1fr 1fr; }
