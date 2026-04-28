@@ -172,10 +172,19 @@ window.addEventListener("DOMContentLoaded", async () => {
         return;
     }
 
-    let userEmail = localStorage.getItem("userEmail") || sessionUser.email || "";
+    let storedEmail = localStorage.getItem("userEmail");
+    let userEmail = [storedEmail, sessionUser.email, sessionUser.profile?.email]
+        .find(email => email && email !== "undefined" && email !== "null") || "";
+
+    if (!userEmail) {
+        document.getElementById("email").placeholder = "Email not found. Please login again.";
+        return;
+    }
+
+    document.getElementById("email").value = userEmail;
 
     try {
-        let res = await fetch(`https://hirex-backend-sio8.onrender.com/profile/${userEmail}`);
+        let res = await fetch(`https://hirex-backend-sio8.onrender.com/profile/${encodeURIComponent(userEmail)}`);
         let user = await res.json();
 
         if (user && !user.error) {
@@ -461,9 +470,9 @@ function extractMatchedSkillsFromText(resumeText, jobSkills) {
         let normalized = skill.toLowerCase().replace(/[-_]/g, " ").trim();
         if (!normalized) continue;
         // Escape regex special chars then do a word-boundary-ish check
-        let escaped = normalized.replace(/[.*+?^${}()|[\]\]/g, "\$&");
+        let escaped = normalized.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         // Allow skill to appear as part of a word boundary (spaces, punctuation, start/end)
-        let regex = new RegExp("(?:^|[\s,;:/|(\[])(" + escaped + ")(?=$|[\s,;:/|)\]])", "i");
+        let regex = new RegExp("(?:^|[\\s,;:/|(\\[])(" + escaped + ")(?=$|[\\s,;:/|)\\]])", "i");
         if (regex.test(text) || text.includes(normalized)) {
             matched.push(skill);
         }
